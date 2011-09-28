@@ -9,7 +9,7 @@
 			<TextView android:layout_width="wrap_content" android:textSize="25dip" android:text="Grantland" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 			<TextView android:layout_width="wrap_content" android:text="Bill Simmons" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 			<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-			<Button android:id="@+id/grantland_install" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="5dip"></Button>
+			<Button android:id="@+id/grantland_install" android:onClick="onClick" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="5dip"></Button>
 		</LinearLayout>
 	</LinearLayout>
 	
@@ -23,7 +23,7 @@
 				<LinearLayout android:orientation="vertical" android:layout_height="match_parent" android:layout_width="200dp">
 					<TextView android:layout_width="wrap_content" android:textSize="23dip" android:text="NY Times" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 					<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-					<Button android:id="@+id/newyorktimes_install" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
+					<Button android:id="@+id/newyorktimes_install" android:onClick="onClick" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
 				</LinearLayout>
 			</LinearLayout>
 			
@@ -32,7 +32,7 @@
 				<LinearLayout android:orientation="vertical" android:layout_height="match_parent" android:layout_width="200dp">
 					<TextView android:layout_width="wrap_content" android:textSize="23dip" android:text="Etherpal" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 					<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-					<Button android:id="@+id/etherpal_install" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
+					<Button android:id="@+id/etherpal_install" android:onClick="onClick" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
 				</LinearLayout>
 			</LinearLayout>
 			
@@ -41,7 +41,7 @@
 				<LinearLayout android:orientation="vertical" android:layout_height="match_parent" android:layout_width="200dp">
 					<TextView android:layout_width="wrap_content" android:textSize="23dip" android:text="BostonGlobe" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 					<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-					<Button android:id="@+id/bostonglobe_install" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
+					<Button android:id="@+id/bostonglobe_install" android:onClick="onClick" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
 				</LinearLayout>
 			</LinearLayout>
 			
@@ -50,7 +50,7 @@
 				<LinearLayout android:orientation="vertical" android:layout_height="match_parent" android:layout_width="200dp">
 					<TextView android:layout_width="wrap_content" android:textSize="23dip" android:text="Angry Birds" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 					<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-					<Button android:id="@+id/angrybirds_install" android:text="$0.99" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
+					<Button android:id="@+id/angrybirds_install" android:onClick="onClick" android:text="$0.99" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
 				</LinearLayout>
 			</LinearLayout>
 			
@@ -59,7 +59,7 @@
 				<LinearLayout android:orientation="vertical" android:layout_height="match_parent" android:layout_width="200dp">
 					<TextView android:layout_width="wrap_content" android:textSize="23dip" android:text="Evernote" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 					<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-					<Button android:id="@+id/evernote_install" android:text="$4.99" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
+					<Button android:id="@+id/evernote_install" android:onClick="onClick" android:text="$4.99" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
 				</LinearLayout>
 			</LinearLayout>
 			
@@ -68,7 +68,7 @@
 				<LinearLayout android:orientation="vertical" android:layout_height="match_parent" android:layout_width="200dp">
 					<TextView android:layout_width="wrap_content" android:textSize="23dip" android:text="LinkedIN" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 					<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-					<Button android:id="@+id/linkedin_install" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
+					<Button android:id="@+id/linkedin_install" android:onClick="onClick" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
 				</LinearLayout>
 			</LinearLayout>
 			
@@ -77,7 +77,7 @@
 				<LinearLayout android:orientation="vertical" android:layout_height="match_parent" android:layout_width="200dp">
 					<TextView android:layout_width="wrap_content" android:textSize="23dip" android:text="Roundball" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_marginLeft="20dip" android:textColor="@android:color/black" android:layout_height="wrap_content"></TextView>
 					<ImageView android:src="@drawable/rating" android:layout_marginLeft="20dip" android:layout_height="30dip" android:layout_width="100dip" android:id="@+id/imageView1"></ImageView>
-					<Button android:id="@+id/roundball_install" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
+					<Button android:id="@+id/roundball_install" android:onClick="onClick" android:text="Free" android:layout_width="80dip" android:layout_marginLeft="20dip" android:layout_height="35dip" android:layout_marginTop="3dip"></Button>
 				</LinearLayout>
 			</LinearLayout>
 			
