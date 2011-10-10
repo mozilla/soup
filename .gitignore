@@ -1,7 +1,4 @@
-*.class
-.DS_Store?
-ehthumbs.db
-Icon?
-Thumbs.db
-gen/
+*.swp
+.DS_Store
 bin/
+gen/
