@@ -1,7 +1,42 @@
 
+function getBiggestIcon(minifest) {
+    // see if the minifest has any icons, and if so, return the largest one
+    if (minifest.icons) {
+        var biggest = 0;
+        for (z in minifest.icons) {
+            var size = parseInt(z, 10);
+            if (size > biggest) biggest = size;
+        }
+        if (biggest !== 0) return minifest.icons[biggest];
+    }
+    return null;
+}
+
 navigator.mozApps = {
 	install: function(url, install_data, onsuccess, onerror) {
-		alert("TO BE IMPLEMENTED");		
+	    // Fetch Manifest
+        var req = new XMLHttpRequest();
+        req.open("GET", url, true);
+        req.onreadystatechange = function(evt) {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    var manifest = JSON.parse(req.responseText);
+                    var origin = URLParse(url).normalize().originOnly().toString();
+                    var launch = origin;
+                    var icon = getBiggestIcon(manifest);
+
+                    if (icon.slice(0, 5) != "data:")
+                        icon = origin + icon;
+                    if ('launch_path' in manifest)
+                        launch += manifest.launch_path;
+
+                    window.plugins.homeScreen.add(launch, manifest.name, icon);
+                } else {
+                    alert("Could not install app!");
+                }
+            }  
+        };
+        req.send();
 	}
 };
 
