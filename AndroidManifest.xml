@@ -10,6 +10,7 @@
 		android:resizeable="true"
 		android:anyDensity="true"
 	/>
+	
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-permission android:name="android.permission.VIBRATE" />
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -29,9 +30,10 @@
 	
     <uses-sdk android:minSdkVersion="8" />
 
-    <application android:icon="@drawable/icon" android:label="@string/app_name">
+    <application android:icon="@drawable/soup" android:label="@string/app_name" android:launchMode="singleTop">
         <activity android:name=".SoupActivity"
-                  android:label="@string/app_name">
+                  android:label="@string/app_name"
+                  android:theme="@android:style/Theme.NoTitleBar">
             <intent-filter>
 				<action android:name="org.mozilla.labs.WEBAPP" />
 				<action android:name="android.intent.action.MAIN" />
@@ -39,8 +41,9 @@
             </intent-filter>
         </activity>
 		<activity android:name="com.phonegap.DroidGap"
-			android:label="@string/app_name"
-			android:configChanges="orientation|keyboardHidden">
+			      android:label="@string/app_name"
+				  android:configChanges="orientation|keyboardHidden"
+				  android:theme="@android:style/Theme.NoTitleBar">
 			<intent-filter>
 			</intent-filter>
 		</activity> 

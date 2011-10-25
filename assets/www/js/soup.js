@@ -14,6 +14,7 @@ function getBiggestIcon(minifest) {
 
 navigator.mozApps = {
 	install: function(url, install_data, onsuccess, onerror) {
+        if (url.substr(0, 7) == "http://") {
 	    // Fetch Manifest
         var req = new XMLHttpRequest();
         req.open("GET", url, true);
@@ -37,6 +38,16 @@ navigator.mozApps = {
             }  
         };
         req.send();
+        } else {
+            switch (url) {
+                case "etherpal":
+                    window.plugins.homeScreen.add("http://etherpal.org", "Etherpal", "http://proness.kix.in/misc/etherpal48.png");
+                    break;
+                case "grantland":
+                    window.plugins.homeScreen.add("http://grantland.com/", "Grantland", "http://proness.kix.in/misc/grantland48.png");
+                    break;
+            }
+        }
 	}
 };
 
