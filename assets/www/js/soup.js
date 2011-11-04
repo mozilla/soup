@@ -46,6 +46,12 @@ navigator.mozApps = {
                 case "grantland":
                     window.plugins.homeScreen.add("http://grantland.com/", "Grantland", "http://proness.kix.in/misc/grantland48.png");
                     break;
+                case "aprilzero":
+                    window.plugins.homeScreen.add("http://aprilzero.com/", "April Zero", "http://proness.kix.in/misc/aprilzero96.png");
+                    break;
+                case "halma":
+                    window.plugins.homeScreen.add("http://diveintohtml5.info/examples/offline/halma.html", "Halma", "http://proness.kix.in/misc/halma96.png");
+                    break;
             }
         }
 	}
