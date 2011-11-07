@@ -15,6 +15,7 @@ import com.phonegap.api.PluginResult.Status;
 
 public class HomeScreenPlugin extends Plugin {
 	public static final String ACTION = "add";
+	private static final String EXTRA_SHORTCUT_DUPLICATE = "duplicate";
 	
 	private Bitmap getResizedBitmap(Bitmap bm, int newHeight, int newWidth) {
 		int width = bm.getWidth();
@@ -53,13 +54,17 @@ public class HomeScreenPlugin extends Plugin {
 				
 				Intent shortcutIntent = new Intent(this.ctx, SoupActivity.class);
 		        shortcutIntent.setAction(SoupActivity.ACTION_WEBAPP);
+		        shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		        shortcutIntent.putExtra("uri", uri);
 		        
 		        Intent intent = new Intent();
+		        intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
 		        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
 		        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
 		        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
-		        intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+		        // Disallow the creation of duplicate shortcuts (i.e. same
+		        // url, same title, but different screen position).
+		        intent.putExtra(EXTRA_SHORTCUT_DUPLICATE, false);
 		        this.ctx.sendBroadcast(intent);
 		        
 		        result = new PluginResult(Status.OK);
