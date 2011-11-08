@@ -40,12 +40,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-		<activity android:name="com.phonegap.DroidGap"
-			      android:label="@string/app_name"
-				  android:configChanges="orientation|keyboardHidden"
-				  android:theme="@android:style/Theme.NoTitleBar">
-			<intent-filter>
-			</intent-filter>
-		</activity> 
     </application>
 </manifest>
