@@ -2,4 +2,5 @@
 <resources>
     <string name="hello">Hello World, SoupActivity!</string>
     <string name="app_name">Soup</string>
+    <string name="app_create_shortcut">Soup App</string>
 </resources>
