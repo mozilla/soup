@@ -1,9 +1,11 @@
-package org.mozilla.labs.Soup;
+package org.mozilla.labs.Soup.plugins;
 
 import java.io.InputStream;
 import java.net.URL;
 
 import org.json.JSONArray;
+import org.mozilla.labs.Soup.app.AppActivity;
+
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -52,8 +54,8 @@ public class HomeScreenPlugin extends Plugin {
 				Bitmap bitmap = BitmapFactory.decodeStream((InputStream)new URL(icon).getContent());
 				bitmap = getResizedBitmap(bitmap, 72, 72);
 				
-				Intent shortcutIntent = new Intent(this.ctx, SoupActivity.class);
-		        shortcutIntent.setAction(SoupActivity.ACTION_WEBAPP);
+				Intent shortcutIntent = new Intent(this.ctx, AppActivity.class);
+		        shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
 		        shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		        shortcutIntent.putExtra("uri", uri);
 		        
@@ -65,7 +67,11 @@ public class HomeScreenPlugin extends Plugin {
 		        // Disallow the creation of duplicate shortcuts (i.e. same
 		        // url, same title, but different screen position).
 		        intent.putExtra(EXTRA_SHORTCUT_DUPLICATE, false);
+		        
 		        this.ctx.sendBroadcast(intent);
+		        
+		        // Instant start
+		        this.ctx.startActivity(shortcutIntent);
 		        
 		        result = new PluginResult(Status.OK);
 			} catch (Exception e) {

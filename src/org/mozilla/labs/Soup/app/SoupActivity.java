@@ -1,14 +1,15 @@
-package org.mozilla.labs.Soup;
+package org.mozilla.labs.Soup.app;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.mozilla.labs.Soup.R;
 
 import com.phonegap.*;
 
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.Gravity;
@@ -16,20 +17,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
-public class SoupActivity extends DroidGap {
+public abstract class SoupActivity extends DroidGap {
 	public static final String ACTION_WEBAPP = "org.mozilla.labs.webapp";
 	static final FrameLayout.LayoutParams COVER_SCREEN_PARAMS = new FrameLayout.LayoutParams(
 	    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER_VERTICAL
 	);
 	
-	private WebView childView;
+	private SoupGapClient appClient;
 	
 	private class SoupChildViewClient extends WebViewClient {
 
@@ -70,10 +71,20 @@ public class SoupActivity extends DroidGap {
 		@Override
 		public void onPageFinished(WebView view, String url) {
 			Log.i("SoupChildViewClient", "onPageFinished " + url);
-			super.onPageFinished(view, url);
-			
 			injectJavaScript(appView);
+			
+			super.onPageFinished(view, url);
 		}
+		
+	}
+
+	private class SoupChildClient extends WebChromeClient {
+		
+		public void onCloseWindow(WebView view) {
+			// Closing our only dialog without checking what view is!
+			appClient.onClick(view);
+		}
+		
 	}
 	
 	private class SoupViewClient extends GapViewClient {
@@ -88,15 +99,16 @@ public class SoupActivity extends DroidGap {
 		@Override
 		public void onPageFinished(WebView view, String url) {
 			Log.i("SoupViewClient", "onPageFinished " + url);
-			super.onPageFinished(view, url);
-			
 			injectJavaScript(appView);
+			
+			super.onPageFinished(view, url);
 		}
 	}
 	
 	private class SoupGapClient extends GapClient implements OnClickListener {
 
 		private View container;
+		private WebView childView;
 		
 		/**
 		 * @param context
@@ -124,6 +136,7 @@ public class SoupActivity extends DroidGap {
 		
 		@Override
 		public boolean onCreateWindow(WebView view, boolean modal, boolean user, Message result) {
+			// TODO Launch on UI thread
 			createChildWindow();
 			
 			WebView.WebViewTransport transport = (WebView.WebViewTransport) result.obj;
@@ -150,14 +163,15 @@ public class SoupActivity extends DroidGap {
 	        settings.setDomStorageEnabled(true);
 	        settings.setBuiltInZoomControls(true);
 	        settings.setJavaScriptEnabled(true);
+	        settings.setAllowFileAccess(true);
 	        
 	        // settings.setSupportMultipleWindows(true);
 	        settings.setJavaScriptCanOpenWindowsAutomatically(true);
 			
 			attachChildWindow(container);
 			
-			SoupChildViewClient client = new SoupChildViewClient();
-			childView.setWebViewClient(client);
+			childView.setWebViewClient(new SoupChildViewClient());
+			childView.setWebChromeClient(new SoupChildClient());
 			
 			childView.requestFocus(View.FOCUS_DOWN);
 			childView.requestFocusFromTouch();
@@ -181,11 +195,15 @@ public class SoupActivity extends DroidGap {
 	}
 	
 	private void injectJavaScript(WebView view) {
-		// tried: "javascript:if(!window.$soup) (function(){ var s = document.createElement('script'); s.src = 'file:///android_asset/www/js/soup-addon.js'; document.getElementsByTagName('head')[0].appendChild(s); })();"
-		
+		injectSingleFile(view, "phonegap-1.2.0.js", "");
+		injectSingleFile(view, "soup-addon.js", "");
+	}
+	
+	private void injectSingleFile(WebView view, String file, String prepend) {
 		String strContent;
+		
 		try {
-			InputStream is = getAssets().open("www/js/soup-addon.js");
+			InputStream is = getAssets().open("www/js/" + file);
 			int size = is.available();
 			byte[] buffer = new byte[size];
 			is.read(buffer);
@@ -197,9 +215,7 @@ public class SoupActivity extends DroidGap {
 			return;
 		}
 		
-		Log.i("SoupActivity", "injectJavaScript " + strContent.length());
-		
-		view.loadUrl("javascript:" + strContent);
+		view.loadUrl("javascript:" + prepend + strContent);
 	}
 	
     /** Called when the activity is first created. */
@@ -207,22 +223,11 @@ public class SoupActivity extends DroidGap {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        super.init();
-        
-        appView.setWebChromeClient(new SoupGapClient(SoupActivity.this));
-        setWebViewClient(this.appView, new SoupViewClient(this));
-        
-        // Allow window.open, bridged by onCreateWindow
-        appView.getSettings().setSupportMultipleWindows(true);
-        
-        Intent i = getIntent();
-        Log.i("SoupActivity", "onCreate called with Intent " + i);
-        if (ACTION_WEBAPP.equals(i.getAction())) {
-        	String uri = i.getStringExtra("uri");
-        	super.loadUrl(uri);
-        } else {
-        	super.loadUrl("file:///android_asset/www/index.html");
-        }
+        Log.i("SoupActivity", "onCreate called with Intent " + getIntent().getAction());
+
+        // Resolve the intent
+
+        this.onResolveIntent();
     }
     
     /**
@@ -230,18 +235,51 @@ public class SoupActivity extends DroidGap {
      **/
     @Override
     protected void onNewIntent(Intent intent) {
-    	Log.i("SoupActivity", "onNewIntent called with Intent " + intent);
-    	
         super.onNewIntent(intent);
+        
+        if (intent.equals(getIntent())) {
+            Log.i("SoupActivity", "onNewIntent equals current Intent: " + intent);
+        	return;
+        }
+
+        Log.i("SoupActivity", "onNewIntent called with new Intent " + intent);
+        
+        setIntent(intent);
+        
+        this.onResolveIntent();
     }
     
-    /* (non-Javadoc)
-     * @see com.phonegap.DroidGap#onPause()
+    /**
+     * Init phonegap and create layout
+     * 
+     * @return true if the layout was freshly created
      */
-    @Override
-    public void onPause() {
-    	super.onPause();
-    	// Whoah.
-    	// finish();
+    public boolean onCreateLayout() {
+    	if (appView != null) {
+    		Log.i("SoupActivity", "init skipped");
+    		return false;
+    	}
+    	
+    	super.setStringProperty("loadingDialog", "Loading App");
+    	super.setStringProperty("errorUrl", "file:///android_asset/www/error.html");
+    	// super.setIntegerProperty("splashscreen", R.drawable.splash);
+    	
+    	super.init();
+
+        // Set our own extended webkit client and clientview
+    	appClient = new SoupGapClient(SoupActivity.this);
+        appView.setWebChromeClient(appClient);
+        setWebViewClient(this.appView, new SoupViewClient(this));
+        
+        final WebSettings settings = appView.getSettings();
+        settings.setAllowFileAccess(true);
+        
+        // Allow window.open, bridged by onCreateWindow
+        settings.setSupportMultipleWindows(true);
+        
+        return true;
     }
+
+	protected abstract void onResolveIntent();
+
 }
