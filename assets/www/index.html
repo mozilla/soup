@@ -5,54 +5,21 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge;chrome=1" >
     <title dir="ltr">Hot Soup</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Marvel:400,700" type="text/css">
     <link rel="stylesheet" media="screen" href="css/style.css">
-    <script src="js/phonegap-1.2.0.js" type="text/javascript"></script>
-    <script src="js/homescreen.js" type="text/javascript"></script>
-    <script src="js/urlmatch.js" type="text/javascript"></script>
 </head>
 <body>
 <header>
 	<h1><a id="home" href="index.html">My Apps</a></h1>
-	<nav>
-		<a href="https://apps-preview-dev.allizom.org/en-US/apps/">Apps Market</a>
-	</nav>
+	<a id="btn-login" href="#login">
+		<img src="https://browserid.org/i/sign_in_orange.png" />
+	</a>
+	<a href="https://apps-preview-dev.allizom.org/en-US/apps/">Store</a>
 </header>
-<article id="main">
-	
-	<a href="">Get more Apps …</a>
-
-  <div id="market" class="grid">
-      <span class="app" manifest="etherpal">
-          <img src="http://proness.kix.in/misc/etherpal96.png">
-          <div class="msg">Etherpal</div>
-      </span>
-      <span class="app" manifest="http://www.sinuousgame.com/manifest.webapp">
-          <img src="http://www.sinuousgame.com/assets/images/icon_128.png">
-          <div class="msg">Sinuous</div>
-      </span>
-      <span class="app" manifest="grantland">
-          <img src="http://proness.kix.in/misc/grantland96.png">
-          <div class="msg">Grantland</div>
-      </span>
-      <span class="app" manifest="halma">
-          <img src="http://proness.kix.in/misc/halma96.png">
-          <div class="msg">Halma</div>
-      </span>
-      <span class="app" manifest="aprilzero">
-          <img src="http://proness.kix.in/misc/aprilzero96.png">
-          <div class="msg">April Zero</div>
-      </span>
-      <span class="app" manifest="http://www.limejs.com/roundball.webapp">
-          <img src="http://www.limejs.com/static/roundball_icon_128.png">
-          <div class="msg">Roundball</div>
-      </span>
-  </div>
-  <a href="http://moz.digitarald.com/myapp/">My App!</a>
+<article id="myapps" role="main">
+	<em>Loading …</em>
 </article>
-<footer>
-	<a href="javascript:window.open('https://apps.mozillalabs.com/');">About</a>
-</footer>
-<script src="js/soup.js" type="text/javascript"></script>
+<script src="https://browserid.org/include.js"></script>
+<script src="js/urlmatch.js"></script>
+<script src="js/soup.js"></script>
 </body>
 </html>

@@ -1,81 +1,102 @@
 
-function getBiggestIcon(minifest) {
-    // see if the minifest has any icons, and if so, return the largest one
-    if (minifest.icons) {
-        var biggest = 0;
-        for (z in minifest.icons) {
-            var size = parseInt(z, 10);
-            if (size > biggest) biggest = size;
-        }
-        if (biggest !== 0) return minifest.icons[biggest];
-    }
-    return null;
-}
+var soup = {};
 
-navigator.mozApps = {
-	install: function(url, install_data, onsuccess, onerror) {
-        if (url.substr(0, 7) == "http://") {
-	    // Fetch Manifest
-        var req = new XMLHttpRequest();
-        req.open("GET", url, true);
-        req.onreadystatechange = function(evt) {
-            if (req.readyState == 4) {
-                if (req.status == 200) {
-                    var manifest = JSON.parse(req.responseText);
-                    var origin = URLParse(url).normalize().originOnly().toString();
-                    var launch = origin;
-                    var icon = getBiggestIcon(manifest);
+soup.App = (function() {
+	
+	function App(data) {
+		
+		this.data = data;
+		this.manifest = data.manifest;
+		
+	};
+	
+	App.prototype.render = function(container) {
+		
+		var el = document.createElement('div');
+		el.className = 'app';
+		
+		var img = document.createElement('img');
+		if (this.manifest.icons[128]) {
+			img.src = this.data.origin + this.manifest.icons[128];
+		} else {
+			img.src = 'http://proness.kix.in/misc/etherpal96.png';
+		}
+		
+		var title = document.createElement('div');
+		title.textContent = this.manifest.name;
+		
+		el.appendChild(img);
+		el.appendChild(title);
+		
+		el.onclick = this.launch.bind(this);
+		
+		container.appendChild(el);
+		
+	};
+	
+	App.prototype.launch = function() {
+		
+		navigator.mozApps.mgmt.launch(this.data.origin);
+		
+	};
+	
+	return App;
+	
+})();
 
-                    if (icon.slice(0, 5) != "data:")
-                        icon = origin + icon;
-                    if ('launch_path' in manifest)
-                        launch += manifest.launch_path;
+document.addEventListener('deviceready', function() {
+	
+	navigator.mozApps.mgmt.list(function(list) {
+		if (!list.length) {
+			alert('No apps installed!');
+			return;
+		}
+		
+		var container = document.getElementById('myapps');
+		container.innerHTML = '';
+		
+		list.forEach(function(data) {
+			var app = new soup.App(data);
+			app.render(container);
+		});
+		
+		var login = document.getElementById('btn-login');
+		
+		if (login) {
+			login.addEventListener('click', function(evt) {
+				evt.preventDefault();
+				
+				navigator.id.getVerifiedEmail(function(assertion) {
+					navigator.notification.alert('Thanks for logging in!');
+					
+					login.style.display = 'none';
+				});
+			}, false);
+		}
+	});
 
-                    window.plugins.homeScreen.add(launch, manifest.name, icon);
-                } else {
-                    alert("Could not install app!");
-                }
-            }  
-        };
-        req.send();
-        } else {
-            switch (url) {
-                case "etherpal":
-                    window.plugins.homeScreen.add("http://etherpal.org", "Etherpal", "http://proness.kix.in/misc/etherpal48.png");
-                    break;
-                case "grantland":
-                    window.plugins.homeScreen.add("http://grantland.com/", "Grantland", "http://proness.kix.in/misc/grantland48.png");
-                    break;
-                case "aprilzero":
-                    window.plugins.homeScreen.add("http://aprilzero.com/", "April Zero", "http://proness.kix.in/misc/aprilzero96.png");
-                    break;
-                case "halma":
-                    window.plugins.homeScreen.add("http://diveintohtml5.info/examples/offline/halma.html", "Halma", "http://proness.kix.in/misc/halma96.png");
-                    break;
-            }
-        }
-	}
-};
+	// var apps = document.getElementsByClassName("app");
+	// for (var i = 0; i < apps.length; i++) {
+	    // var app = apps[i];
+	    // var manifest = app.getAttribute("data-manifest");
 
-var apps = document.getElementsByClassName("app");
-for (var i = 0; i < apps.length; i++) {
-    var app = apps[i];
-    var manifest = app.getAttribute("manifest");
+	    // function makeInstallFunc(appSpan, manifest)
+	    // {
+	        // return function() {
+	            // navigator.mozApps.install(
+	                // manifest,
+	                // {},
+	                // function(done) {
+	                    // appSpan.style.display = "none";
+	                // },
+	                // function(err) {
+	                    // alert("Oh no, there was an error " + err);
+	                // }
+	            // );
+	        // }
+	    // };
+	    // app.onclick = makeInstallFunc(app, manifest);
+	// }
 
-    function makeInstallFunc(appSpan, manifest)
-    {
-        return function() {
-            navigator.mozApps.install(
-                manifest,
-                {},
-                function(done) {
-                    appSpan.style.display = "none";
-                },
-                function(err) {
-                    alert("Oh no, there was an error " + err);
-                }
-            );
-        }
-    };
-    app.onclick = makeInstallFunc(app, manifest);
-}
+}, false);
+

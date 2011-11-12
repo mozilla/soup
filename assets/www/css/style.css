@@ -1,48 +1,118 @@
 @charset "UTF-8";
 
+html, body {
+	height: 100%;
+}
+
 body {
-	font: 13px sans-serif;
+	font: 14px/1.6em sans-serif;
 	margin: 0;
+	
+	background-color: #E7EAEC;
+	
 	display: box;
-	box-orient: horizontal;
+	display: -webkit-box;
+	box-orient: vertical;
+	-webkit-box-orient: vertical;
 }
 
 header {
+	display: block;
+	height: 2.6em;
+	line-height: 2.6em;
+	background-color: #eee;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#333), color-stop(0.4, #222), to(#111));
 	
+	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+	
+	display: box;
+	display: -webkit-box;
+	box-orient: horizontal;
+	-webkit-box-orient: horizontal;
 }
 
-.msg {
-	font-size: 1.5em;
+header h1 {
+	margin: 0;
+	padding: 0;
+	
+	font-size: 1em;
+	box-flex: 1;
+	-webkit-box-flex: 1;
+}
+header h1 a {
+	padding-left: 2em;
+	background: url(../images/soup.png) no-repeat 0.3em 45%;
+	background-size: 1.4em 1.4em;
+	
+	color: #d5d5d5;
+	font-weight: bold;
+	font-size: 1.6em;
 }
 
-.well {
-	background-color: #F2F2F2;
-	background-image: -moz-linear-gradient(center top, #FFFFFF 0%, #F2F2F2 100%);
-	border: 1px solid #BBBBBB;
-	border-radius: 5px 5px 5px 5px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) inset;
+header a {
+	color: #d5d5d5;
+	text-decoration: none;
+	padding: 0 0.6em;
+	display: block;
+	padding-top: 0.1em;
+	padding-bottom: -0.1em;
+	text-shadow: 0 0 1px rgba(0, 0, 0, 0.9);
+}
+header a:hover, header a:focus {
+	color: #fff;
+}
+header > a:hover, header > a:focus {
+	color: #000;
+	text-shadow: 0 0 1px rgba(255, 255, 255, 0.9);
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#fff), color-stop(0.4, #eee), to(#ddd));
+}
+header img {
+	padding-top: 0.4em;
+}
+header > * {
+	border-right: 1px solid rgba(200, 200, 200, 0.1);
+}
+header > *:last-child {
+	border-right: none;
 }
 
-#header {
-	font-size: 4em;
+article {
+	display: block;
+	box-flex: 1;
+	-webkit-box-flex: 1;
+	overflow: auto;
+	
+	text-align: center;
+	padding: 0.6em 0;
 }
 
 .app {
 	cursor: pointer;
-	margin: 10px;
-	font-size: 0.7em;
 	display: inline-block;
-	border: solid black 1px;
-	border-radius: 5px 5px 5px 5px;
+	margin: 0.6em 0.3em;
+	padding: 0.3em 0.3em;
+	border-radius: 10px;
+}
+
+.app:hover {
+	background-color: #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) inset;
 }
 
 .app img {
 	width: 80px;
 	height: 80px;
-	padding: 10px;
-	background-color: #F2F2F2;
-	background-image: -moz-linear-gradient(center top, #FFFFFF 0%, #F2F2F2 100%);
-	border: 1px solid #BBBBBB;
-	border-radius: 5px 5px 5px 5px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) inset;
+	border-radius: 5px;
 }
+.app .title {
+	color: #333;
+	font-weight: bold;
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+footer {
+	display: block;
+	height: 2em;
+	background-color: #333;
+}
+

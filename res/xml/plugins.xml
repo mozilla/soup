@@ -17,4 +17,7 @@
     <plugin name="FileTransfer" value="com.phonegap.FileTransfer"/>
     <plugin name="Capture" value="com.phonegap.Capture"/>
     <plugin name="HomeScreenPlugin" value="org.mozilla.labs.Soup.plugins.HomeScreenPlugin" />
+    <plugin name="MozAppsPlugin" value="org.mozilla.labs.Soup.plugins.MozAppsPlugin" />
+    <plugin name="MozAppsMgmtPlugin" value="org.mozilla.labs.Soup.plugins.MozAppsMgmtPlugin" />
+    <plugin name="MozIdPlugin" value="org.mozilla.labs.Soup.plugins.MozIdPlugin" />
 </plugins>
