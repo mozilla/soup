@@ -5,7 +5,9 @@ import android.util.Log;
 import android.view.View;
 
 public class AppActivity extends SoupActivity {
-
+	
+	private static final String TAG = "AppActivity";
+	
 	private String currentUri;
 
 	protected void onResolveIntent() {
@@ -13,7 +15,7 @@ public class AppActivity extends SoupActivity {
 		final Intent intent = getIntent();
 		final String action = intent.getAction();
 		
-		Log.i("AppActivity", "onResolveIntent " + intent);
+		Log.d(TAG, "onResolveIntent " + intent);
         
         if (ACTION_WEBAPP.equals(action)) {
         	String uri = intent.getStringExtra("uri");
@@ -22,7 +24,7 @@ public class AppActivity extends SoupActivity {
         	
         	if (!didInitialize) {
         		if (uri.equals(currentUri)) {
-        			Log.i("AppActivity", "onResolveIntent skipped " + uri);
+        			Log.d(TAG, "onResolveIntent skipped " + uri);
         			return;
         		}
         		
@@ -30,7 +32,7 @@ public class AppActivity extends SoupActivity {
         		appView.setVisibility(View.INVISIBLE);
         	}
         	
-        	Log.i("AppActivity", "onResolveIntent loading " + uri);
+        	Log.d(TAG, "onResolveIntent loading " + uri);
         	
         	currentUri = uri;
         	super.loadUrl(uri);
