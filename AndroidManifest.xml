@@ -36,6 +36,34 @@
         android:theme="@android:style/Theme.NoTitleBar" >
         <activity
             android:alwaysRetainTaskState="true"
+            android:configChanges="orientation|keyboardHidden"
+            android:label="@string/app_name_store"
+            android:launchMode="singleTask"
+            android:name=".app.StoreActivity"
+            android:taskAffinity=".app.StoreActivity" >
+            <intent-filter >
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter >
+
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="apps*.mozilla.org"
+                    android:pathPattern="*/apps/*"
+                    android:scheme="https" />
+                <data
+                    android:host="apps*.allizom.org"
+                    android:pathPattern="*/apps/*"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:alwaysRetainTaskState="true"
+            android:configChanges="orientation|keyboardHidden"
             android:label="@string/app_name_launcher"
             android:launchMode="singleTask"
             android:name=".app.LauncherActivity"
@@ -48,20 +76,7 @@
         </activity>
         <activity
             android:alwaysRetainTaskState="true"
-            android:label="@string/app_name_store"
-            android:launchMode="singleTask"
-            android:name=".app.StoreActivity"
-            android:taskAffinity=".app.StoreActivity" >
-            <intent-filter >
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-
-                <action android:name="android.intent.action.VIEW" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:alwaysRetainTaskState="true"
+            android:configChanges="orientation|keyboardHidden"
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:name=".app.AppActivity"
@@ -70,6 +85,15 @@
                 <action android:name="org.mozilla.labs.WEBAPP" />
 
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter >
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <action android:name="android.intent.action.PICK" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.dir/vnd.mozilla.apps" />
             </intent-filter>
         </activity>
         <!-- Compat for old shortcuts -->
@@ -83,6 +107,31 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity-alias>
+
+        <activity
+            android:label="Settings"
+            android:name=".app.SharedSettings" >
+            <intent-filter >
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:authorities="org.mozilla.labs.Soup.provider.AppsProvider"
+            android:name="org.mozilla.labs.Soup.provider.AppsProvider" />
+
+        <activity
+            android:icon="@drawable/soup"
+            android:label="@string/app_name_live"
+            android:name=".app.LiveFolderActivity" >
+            <intent-filter >
+                <action android:name="android.intent.action.CREATE_LIVE_FOLDER" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <!-- It is recommended that you use an activity-alias to provide the "CREATE_SHORTCUT" -->
         <!-- intent-filter.  This gives you a way to set the text (and optionally the -->

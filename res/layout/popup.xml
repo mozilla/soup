@@ -2,37 +2,50 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/subwindow_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="0dip" >
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="10dip" >
+        android:paddingBottom="5dip"
+        android:paddingLeft="0dip"
+        android:paddingRight="0dip"
+        android:paddingTop="20dip" >
+
         <LinearLayout
             android:id="@+id/inner_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:background="@android:drawable/dialog_frame" >
-            <WebView android:id="@+id/webViewPopup"
+            android:background="@android:drawable/alert_light_frame"
+            android:orientation="vertical" >
+
+            <WebView
+                android:id="@+id/webViewPopup"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:fadeScrollbars="true"
-                android:scrollbarStyle="outsideOverlay"
-                android:layout_weight="1" />
+                android:padding="0dip"
+                android:scrollbarStyle="outsideOverlay" />
         </LinearLayout>
     </FrameLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:layout_gravity="right"
-        android:gravity="right" >
-        <ImageButton android:id="@+id/subwindow_close"
-            android:focusable="true"
-            android:padding="0dip"
+        android:gravity="right"
+        android:orientation="vertical" >
+
+        <ImageButton
+            android:id="@+id/subwindow_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_close_clear_cancel" />
+            android:focusable="true"
+            android:paddingTop="25dip"
+            android:src="@android:drawable/btn_dialog" />
     </LinearLayout>
+
 </RelativeLayout>

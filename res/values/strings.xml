@@ -5,4 +5,5 @@
     <string name="app_create_shortcut">Soup App</string>
     <string name="app_name_launcher">Soup Launcher</string>
     <string name="app_name_store">Soup Store</string>
+    <string name="app_name_live">Soup Live Apps</string>
 </resources>

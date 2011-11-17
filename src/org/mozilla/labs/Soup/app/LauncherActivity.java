@@ -11,7 +11,7 @@ public class LauncherActivity extends SoupActivity {
 	protected void onResolveIntent() {
 
 		Log.d(TAG, "onResolveIntent");
-		
+
 		final Intent intent = getIntent();
 		final String action = intent.getAction();
 
@@ -31,4 +31,5 @@ public class LauncherActivity extends SoupActivity {
 		}
 
 	}
+	
 }

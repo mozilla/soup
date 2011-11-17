@@ -10,9 +10,7 @@ public class MozIdPlugin extends Plugin {
 
 	private static final String TAG = "MozIdPlugin";
 	
-	public static final String ACTION_GET_SESSION = "getSession";
-
-	public static final String ACTION_GET_VERIFIED_EMAIL = "getVerifiedEmail";
+	public static final String ACTION_POST_VERIFY = "postVerify";
 
 	/*
 	 * (non-Javadoc)
@@ -25,7 +23,7 @@ public class MozIdPlugin extends Plugin {
 		
 		PluginResult result = null;
 
-		if (ACTION_GET_VERIFIED_EMAIL.equals(action)) {
+		if (ACTION_POST_VERIFY.equals(action)) {
 			try {
 				result = new PluginResult(Status.OK);
 			} catch (Exception e) {
