@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="Settings" >
+
+    <PreferenceCategory
+        android:enabled="false"
+        android:title="Identities" >
+
+        <EditTextPreference
+            android:defaultValue="TODO"
+            android:key="add_account"
+            android:summary="Add additional identities"
+            android:title="Add identity" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Notifications" >
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="install_prompt"
+            android:summary="Prompt before installing synced apps"
+            android:title="Installation Prompt" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="About" >
+
+        <PreferenceScreen
+            android:key="dev_screen"
+            android:summary="Set options for debugging"
+            android:title="Development" >
+
+            <ListPreference
+                android:entries="@array/storeArray"
+                android:entryValues="@array/storeValues"
+                android:key="dev_store"
+                android:summary="Select your preferred store"
+                android:title="Store Authority" />
+
+            <ListPreference
+                android:entries="@array/identityArray"
+                android:entryValues="@array/identityValues"
+                android:key="dev_identity"
+                android:summary="Select your preferred identity provider"
+                android:title="Identity Authority" />
+        </PreferenceScreen>
+
+        <EditTextPreference
+            android:defaultValue="TODO"
+            android:enabled="false"
+            android:key="about"
+            android:summary="About, Terms of Service, Privacy"
+            android:title="About" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

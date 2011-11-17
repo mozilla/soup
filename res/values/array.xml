@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="storeArray">
+        <item>apps-preview-dev.allizom.org</item>
+        <item>apps-preview.allizom.org</item>
+        <item>apps.mozillalabs.com</item>
+    </string-array>
+    <string-array name="storeValues">
+        <item>https://apps-preview-dev.allizom.org</item>
+        <item>https://apps-preview.allizom.org</item>
+        <item>https://apps.mozillalabs.com/appdir/</item>
+    </string-array>
+    <string-array name="identityArray">
+        <item>dev.diresworb.org</item>
+        <item>diresworb.org</item>
+        <item>browserid.org</item>
+    </string-array>
+    <string-array name="identityValues">
+        <item>https://dev.diresworb.org/</item>
+        <item>https://diresworb.org</item>
+        <item>https://browserid.org</item>
+    </string-array>
+
+</resources>

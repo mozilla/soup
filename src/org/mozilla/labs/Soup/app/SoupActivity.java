@@ -2,6 +2,8 @@ package org.mozilla.labs.Soup.app;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -10,17 +12,26 @@ import org.mozilla.labs.Soup.R;
 
 import com.phonegap.*;
 
+import android.R.bool;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.webkit.JsPromptResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -29,15 +40,17 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
 public abstract class SoupActivity extends DroidGap {
-	
+
 	private static final String TAG = "SoupActivity";
-	
+
 	public static final String ACTION_WEBAPP = "org.mozilla.labs.webapp";
-	
+
 	static final FrameLayout.LayoutParams COVER_SCREEN_PARAMS = new FrameLayout.LayoutParams(
 			ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER_VERTICAL);
 
 	private SoupChromeClient appClient;
+
+	public ProgressDialog progress;
 
 	private class SoupChildViewClient extends WebViewClient {
 
@@ -56,25 +69,9 @@ public abstract class SoupActivity extends DroidGap {
 		 */
 		@Override
 		public boolean shouldOverrideUrlLoading(WebView view, String url) {
-			Log.d(TAG + ".SoupChildViewClient", "Going to load " + url);
 			view.loadUrl(url);
 
 			return true;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see android.webkit.WebViewClient#onLoadResource(android.webkit.WebView, java.lang.String)
-		 */
-		@Override
-		public void onLoadResource(WebView view, String url) {
-			// Log.d(TAG + ".SoupChildViewClient", "onLoadResource " + url);
-		}
-
-		@Override
-		public void onReceivedError(WebView view, int err, String desc, String url) {
-			// Log.d(TAG + ".SoupChildViewClient", "onReceivedError " + url + ": " + desc);
 		}
 
 		/**
@@ -89,11 +86,41 @@ public abstract class SoupActivity extends DroidGap {
 		 */
 		@Override
 		public void onPageStarted(WebView view, String url, Bitmap favicon) {
-			Log.d(TAG + ".SoupChildViewClient", "Going to load " + url);
-
-			super.onPageStarted(view, url, favicon);
+			Log.d(TAG + ".SoupChildViewClient", "onPageStarted:  " + url);
 
 			injectJavaScript(view);
+			
+			super.onPageStarted(view, url, favicon);
+			
+			try {
+				progress.setTitle("Loading " + new URI(url).getAuthority());
+			} catch (URISyntaxException e) {
+				
+			}
+			
+			if (favicon != null) {
+				progress.setIcon(new BitmapDrawable(favicon));
+			} else {
+				progress.setIcon(null);
+			}
+			
+			if (progress.isShowing()) {
+				progress.show();
+			}
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see com.phonegap.DroidGap.GapViewClient#onPageFinished(android.webkit.WebView, java.lang.String)
+		 */
+		@Override
+		public void onPageFinished(WebView view, String url) {
+			Log.d(TAG + ".SoupChildViewClient", "onPageFinished: " + url);
+
+			progress.dismiss();
+			
+			super.onPageFinished(view, url);
 		}
 
 	}
@@ -123,23 +150,35 @@ public abstract class SoupActivity extends DroidGap {
 			super(ctx);
 		}
 
-		/**
-		 * Give the host application a chance to take over the control when a new url is about to be loaded in the
-		 * current WebView.
+		/*
+		 * (non-Javadoc)
 		 * 
-		 * @param view
-		 *            The WebView that is initiating the callback.
-		 * @param url
-		 *            The url to be loaded.
-		 * @return true to override, false for default behavior
+		 * @see com.phonegap.DroidGap.GapViewClient#onPageStarted(android.webkit.WebView, java.lang.String,
+		 * android.graphics.Bitmap)
 		 */
 		@Override
 		public void onPageStarted(WebView view, String url, Bitmap favicon) {
-			Log.d(TAG + ".SoupViewClient", "Going to load " + url);
-
-			super.onPageStarted(view, url, favicon);
+			Log.d(TAG + ".SoupViewClient", "onPageStarted: " + url);
 
 			injectJavaScript(view);
+			
+			super.onPageStarted(view, url, favicon);
+			
+			try {
+				progress.setTitle("Loading " + new URI(url).getAuthority());
+			} catch (URISyntaxException e) {
+				
+			}
+			
+			if (favicon != null) {
+				progress.setIcon(new BitmapDrawable(favicon));
+			} else {
+				progress.setIcon(null);
+			}
+			
+			if (progress.isShowing()) {
+				progress.show();
+			}
 		}
 
 		/*
@@ -151,7 +190,10 @@ public abstract class SoupActivity extends DroidGap {
 		public void onPageFinished(WebView view, String url) {
 			Log.d(TAG + ".SoupViewClient", "onPageFinished: " + url);
 
+			// Sets title, handled by application container
 			SoupActivity.this.setTitle(view.getTitle());
+			
+			progress.dismiss();
 
 			super.onPageFinished(view, url);
 		}
@@ -188,12 +230,29 @@ public abstract class SoupActivity extends DroidGap {
 			content.removeView(container);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see com.phonegap.DroidGap.GapClient#onJsPrompt(android.webkit.WebView, java.lang.String, java.lang.String,
+		 * java.lang.String, android.webkit.JsPromptResult)
+		 */
 		@Override
-		public void onCloseWindow(WebView view) {
-			// Closing our only dialog without checking what view is!
-			// onClick(view);
+		public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+			// FIXME: This is a phonegap issue when using loadUrl to inject JS on redirecting pages
+			if (url.equals("about:blank")) {
+				result.cancel();
+				return true;
+			}
+
+			return super.onJsPrompt(view, url, message, defaultValue, result);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see android.webkit.WebChromeClient#onCreateWindow(android.webkit.WebView, boolean, boolean,
+		 * android.os.Message)
+		 */
 		@Override
 		public boolean onCreateWindow(WebView view, boolean modal, boolean user, Message result) {
 			// TODO Launch on UI thread
@@ -270,13 +329,16 @@ public abstract class SoupActivity extends DroidGap {
 			return;
 		}
 
-		view.loadUrl("javascript:" + strContent);
+		view.loadUrl("javascript:try {" + strContent + "} catch (e) {}");
 	}
 
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		progress = new ProgressDialog(this);
+		progress.setIndeterminate(true);
 
 		// Log.d(TAG, "onCreate called with Intent " + getIntent().getAction());
 
@@ -317,7 +379,7 @@ public abstract class SoupActivity extends DroidGap {
 
 		super.setStringProperty("loadingDialog", "Loading App");
 		// super.setStringProperty("loadingPageDialog", "Loading App");
-		super.setStringProperty("errorUrl", "file:///android_asset/www/error.html");
+		// super.setStringProperty("errorUrl", "file:///android_asset/www/error.html");
 		// super.setIntegerProperty("splashscreen", R.drawable.splash);
 
 		super.init();
@@ -335,7 +397,71 @@ public abstract class SoupActivity extends DroidGap {
 		return true;
 	}
 
-	public JSONArray findAll() {
+	/**
+	 * Called when a key is pressed.
+	 * 
+	 * @param keyCode
+	 * @param event
+	 */
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		// Don't let phonegap override our keys
+		if (keyCode == KeyEvent.KEYCODE_MENU) {
+			return false;
+		}
+
+		if (keyCode == KeyEvent.KEYCODE_SEARCH) {
+			return false;
+		}
+
+		return super.onKeyDown(keyCode, event);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+	 */
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.global, menu);
+		return true;
+	}
+
+	public boolean onPrepareOptionsMenu(Menu menu) {
+
+		// TODO: Hide login/logout based on status
+		MenuItem login = menu.findItem(R.id.global_login);
+		login.setVisible(false);
+
+		return super.onPrepareOptionsMenu(menu);
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
+	 */
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.global_settings: {
+			startActivity(new Intent(this, SharedSettings.class));
+			return true;
+		}
+		case R.id.global_login: {
+			return true;
+		}
+		case R.id.global_logout: {
+			return true;
+		}
+		}
+		return false;
+	}
+
+	public static JSONArray findAll() {
 
 		JSONArray list = new JSONArray();
 
@@ -343,6 +469,7 @@ public abstract class SoupActivity extends DroidGap {
 			// http://www.limejs.com/roundball.webapp
 			JSONObject app1 = new JSONObject();
 			app1.put("origin", "http://www.limejs.com");
+			app1.put("manifest_url", "http://www.limejs.com/roundball.webapp");
 			app1.put(
 					"manifest",
 					new JSONObject(
@@ -352,6 +479,7 @@ public abstract class SoupActivity extends DroidGap {
 			// http://sinuousgame.com/manifest.webapp
 			JSONObject app2 = new JSONObject();
 			app2.put("origin", "http://sinuousgame.com");
+			app2.put("manifest_url", "http://sinuousgame.com/manifest.webapp");
 			app2.put(
 					"manifest",
 					new JSONObject(
@@ -362,6 +490,7 @@ public abstract class SoupActivity extends DroidGap {
 			// http://shazow.net/linerage/gameon/manifest.json
 			JSONObject app3 = new JSONObject();
 			app3.put("origin", "http://shazow.net");
+			app3.put("manifest_url", "http://shazow.net/linerage/gameon/manifest.json");
 			app3.put(
 					"manifest",
 					new JSONObject(
@@ -372,6 +501,7 @@ public abstract class SoupActivity extends DroidGap {
 			// http://stillalivejs.t4ils.com/play/manifest.webapp
 			JSONObject app4 = new JSONObject();
 			app4.put("origin", "http://stillalivejs.t4ils.com");
+			app4.put("manifest_url", "http://stillalivejs.t4ils.com/play/manifest.webapp");
 			app4.put(
 					"manifest",
 					new JSONObject(
@@ -382,25 +512,6 @@ public abstract class SoupActivity extends DroidGap {
 		}
 
 		return list;
-	}
-
-	public JSONObject findOneByOrigin(String constrain) {
-
-		JSONArray list = findAll();
-
-		try {
-			for (int i = 0; i < list.length(); i++) {
-				JSONObject app = list.getJSONObject(i);
-				String origin = app.getString("origin");
-
-				if (constrain.equals(origin)) {
-					return app;
-				}
-			}
-		} catch (JSONException e) {
-		}
-
-		return null;
 	}
 
 	protected abstract void onResolveIntent();

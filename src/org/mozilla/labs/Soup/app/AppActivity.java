@@ -3,6 +3,7 @@ package org.mozilla.labs.Soup.app;
 import android.content.Intent;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 public class AppActivity extends SoupActivity {
 	
@@ -38,6 +39,12 @@ public class AppActivity extends SoupActivity {
         	super.loadUrl(uri);
         }
 		
+	}
+	
+	public void onDestroy() {
+		super.onDestroy();
+		
+		Toast.makeText(this, "Closing app", Toast.LENGTH_SHORT).show();
 	}
 	
 }

@@ -1,5 +1,17 @@
 
-var soup = {};
+(function(context) {
+
+Function.prototype.bind = Function.prototype.bind || function(obj) {
+  var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
+  var bound = function() {
+    var args = Array.prototype.concat.apply(headArgs, arguments);
+    return fn.apply(obj, args);
+  };
+  return bound;
+};
+
+
+var soup = context.soup = {};
 
 soup.App = (function() {
 	
@@ -60,6 +72,8 @@ document.addEventListener('deviceready', function() {
 			app.render(container);
 		});
 		
+		// login button
+		
 		var login = document.getElementById('btn-login');
 		
 		if (login) {
@@ -100,3 +114,4 @@ document.addEventListener('deviceready', function() {
 
 }, false);
 
+})(this);

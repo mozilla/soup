@@ -13,13 +13,13 @@ MozId.prototype.getSession = function(onSuccess, onError) {
   );
 };
 
-MozId.prototype.getVerifiedEmail = function(onSuccess, onError) {
+MozId.prototype.postVerify = function(assertion, nSuccess, onError) {
   return PhoneGap.exec(
     onSuccess,
     onError,
     'MozIdPlugin',
-    'getVerifiedEmail',
-    []
+    'postVerify',
+    [assertion]
   );
 };
 
