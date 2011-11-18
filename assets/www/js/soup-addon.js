@@ -29,20 +29,16 @@
 				origin = evt.origin;
 				
 				if (evt.assertion) {
-					callback(evt.assertion);
+					setTimeout(function() {
+						callback(evt.assertion);
+					}, 500);
 					return;
 				}
-				
-				popup = window.open(evt.url);
 				
 				var data = JSON.stringify({
 					origin: location.protocol + '//' + location.host,
 					audience: audience
 				});
-				
-				timer = setInterval(function() {
-					if (popup) popup.postMessage(data, origin);
-				}, 50);
 				
 				function onmessage(evt) {
 					if (timer) {
@@ -64,6 +60,17 @@
 				
 				window.addEventListener('message', onmessage, false);
 				
+				popup = window.open(evt.url);
+				
+				timer = setInterval(function() {
+					if (!popup || !popup.postMessage) {
+						clearInterval(timer);
+						timer = null;
+					} else {
+						popup.postMessage(data, origin);
+					}
+				}, 50);
+				
 				function oncomplete(assertion) {
 					callback(assertion);
 				};
@@ -84,6 +91,7 @@
 		var channel = (id.channel = id.channel || {});
 
 		channel.registerController = function(controller) {
+			
 			var origin, fired;
 
 			window.addEventListener('message', function(evt) {
@@ -103,6 +111,11 @@
 			}, false);
 
 		};
+		
+		var controller = $('body').controller('dialog');
+		if (controller) {
+			channel.registerController(controller);
+		}
 
 		console.log('soup-addon.js bridged id.channel on ' + (location.host || 'file://'));
 	})();
@@ -140,6 +153,7 @@
 		apps.mgmt = apps.mgmt || {};
 
 		apps.mgmt.list = function(onsuccess, onerror) {
+			console.log('apps.mgmt.list');
 			if (!plugins.mozAppsMgmt)
 				(onsuccess || empty)([]);
 			else
@@ -153,8 +167,6 @@
 				plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
 		};
 		
-		navigator.mozApps = apps;
-
 		console.log('soup-addon.js bridged apps on ' + (location.host || 'file://'));
 
 	})();

@@ -6,8 +6,8 @@
 
     <PreferenceCategory
         android:enabled="false"
-        android:title="Identities"
-        android:key="identity_list" >
+        android:key="identity_list"
+        android:title="Identities" >
 
         <EditTextPreference
             android:defaultValue="TODO"
@@ -48,6 +48,7 @@
             android:title="Development" >
 
             <ListPreference
+                android:defaultValue="https://apps-preview.mozilla.org"
                 android:entries="@array/store_array"
                 android:entryValues="@array/store_values"
                 android:key="dev_store"
@@ -55,11 +56,20 @@
                 android:title="Store Authority" />
 
             <ListPreference
+                android:defaultValue="https://browserid.org"
                 android:entries="@array/identity_array"
                 android:entryValues="@array/identity_values"
                 android:key="dev_identity"
                 android:summary="Select your preferred identity provider"
                 android:title="Identity Authority" />
+
+            <ListPreference
+                android:defaultValue="https://myapps.mozillalabs.com"
+                android:entries="@array/sync_array"
+                android:entryValues="@array/sync_values"
+                android:key="dev_sync"
+                android:summary="Select your sync provider"
+                android:title="Sync Authority" />
         </PreferenceScreen>
 
         <EditTextPreference

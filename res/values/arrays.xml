@@ -2,15 +2,17 @@
 <resources>
 
     <string-array name="store_array">
+        <item>apps-preview.mozilla.org</item>
         <item>addons-dev.allizom.org</item>
         <item>apps-preview-dev.allizom.org</item>
         <item>apps-preview.allizom.org</item>
         <item>apps.mozillalabs.com</item>
     </string-array>
     <string-array name="store_values">
-        <item>https://addons-dev.allizom.org/en-US/apps/</item>
-        <item>https://apps-preview-dev.allizom.org/en-US/apps/</item>
-        <item>https://apps-preview.allizom.org/en-US/apps/</item>
+        <item>https://apps-preview.mozilla.org</item>
+        <item>https://addons-dev.allizom.org</item>
+        <item>https://apps-preview-dev.allizom.org</item>
+        <item>https://apps-preview.allizom.org</item>
         <item>https://apps.mozillalabs.com/appdir/</item>
     </string-array>
     <string-array name="identity_array">
@@ -22,6 +24,12 @@
         <item>https://dev.diresworb.org/</item>
         <item>https://diresworb.org</item>
         <item>https://browserid.org</item>
+    </string-array>
+    <string-array name="sync_array">
+        <item>myapps.mozillalabs.com</item>
+    </string-array>
+    <string-array name="sync_values">
+        <item>https://myapps.mozillalabs.com</item>
     </string-array>
     <string-array name="install_dialog_array">
         <item>Create shortcut</item>

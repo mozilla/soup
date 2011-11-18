@@ -703,7 +703,7 @@ PhoneGap.callbackSuccess = function(callbackId, args) {
                 }
             }
             catch (e) {
-                console.log("Error in success callback: "+callbackId+" = "+e);
+                console.log("Error in success callback: "+callbackId+" = " + args.message + ", " +e);
             }
         }
 
