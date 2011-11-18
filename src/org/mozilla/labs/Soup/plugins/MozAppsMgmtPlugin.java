@@ -1,21 +1,12 @@
 package org.mozilla.labs.Soup.plugins;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.app.AppActivity;
-import org.mozilla.labs.Soup.app.SoupActivity;
-import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -30,8 +21,6 @@ public class MozAppsMgmtPlugin extends Plugin {
 	public static final String ACTION_LIST = "list";
 
 	public static final String ACTION_LAUNCH = "launch";
-
-	private static final String EXTRA_SHORTCUT_DUPLICATE = "duplicate";
 
 	/*
 	 * (non-Javadoc)
@@ -53,8 +42,6 @@ public class MozAppsMgmtPlugin extends Plugin {
 				Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, projection, null, null, Apps.DEFAULT_SORT_ORDER);
 
 				cur.moveToFirst();
-				int index = cur.getColumnIndex(Apps.NAME);
-				Log.d(TAG, "Iterating " + index);
 
 				JSONArray list = new JSONArray();
 
@@ -70,7 +57,7 @@ public class MozAppsMgmtPlugin extends Plugin {
 
 				result = new PluginResult(Status.OK, list);
 			} catch (Exception e) {
-				Log.d("MozAppsMgmtPlugin Exception", e.getMessage() + " " + e.toString());
+				Log.w(TAG, action + "failed", e);
 				result = new PluginResult(Status.JSON_EXCEPTION);
 			}
 
@@ -90,7 +77,6 @@ public class MozAppsMgmtPlugin extends Plugin {
 					String origin = cur.getString(cur.getColumnIndex(Apps.ORIGIN));
 					String uri = origin + manifest.optString("launch_path");
 					final String name = manifest.optString("name");
-					final String icon = origin + manifest.optJSONObject("icons").optString("128");
 
 					final Intent shortcutIntent = new Intent(this.ctx, AppActivity.class);
 					shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
@@ -100,23 +86,6 @@ public class MozAppsMgmtPlugin extends Plugin {
 					ctx.runOnUiThread(new Runnable() {
 						public void run() {
 							Toast.makeText(ctx, "Launching " + name, Toast.LENGTH_SHORT).show();
-
-							Bitmap bitmap = ImageFactory.getResizedImage(icon, 72, 72);
-
-							Intent intent = new Intent();
-							intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-							intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-							intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
-							if (bitmap != null) {
-								intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
-							}
-							// Disallow the creation of duplicate shortcuts (i.e. same
-							// url, same title, but different screen position).
-							intent.putExtra(EXTRA_SHORTCUT_DUPLICATE, false);
-
-							ctx.sendBroadcast(intent);
-
-							// Instant start
 
 							ctx.startActivity(shortcutIntent);
 						}

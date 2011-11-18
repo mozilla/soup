@@ -11,7 +11,7 @@
         android:paddingBottom="5dip"
         android:paddingLeft="0dip"
         android:paddingRight="0dip"
-        android:paddingTop="20dip" >
+        android:paddingTop="5dip" >
 
         <LinearLayout
             android:id="@+id/inner_container"
@@ -44,7 +44,8 @@
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
             android:focusable="true"
-            android:paddingTop="25dip"
+            android:paddingTop="20dip"
+            android:paddingRight="20dip"
             android:src="@android:drawable/btn_dialog" />
     </LinearLayout>
 
