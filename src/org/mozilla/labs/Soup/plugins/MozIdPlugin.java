@@ -1,11 +1,22 @@
 package org.mozilla.labs.Soup.plugins;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.oauth.jsontoken.JsonToken;
 import net.oauth.jsontoken.JsonTokenParser;
 import net.oauth.jsontoken.SystemClock;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONStringer;
@@ -13,6 +24,7 @@ import org.mozilla.labs.Soup.app.SharedSettings;
 import org.mozilla.labs.Soup.app.SoupApplication;
 
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
@@ -71,27 +83,57 @@ public class MozIdPlugin extends Plugin {
 		return result;
 	}
 
+	/**
+	 * preVerify
+	 * 
+	 * @param audience
+	 * @return PluginResult
+	 * @throws Exception
+	 */
 	public PluginResult preVerify(String audience) throws Exception {
 
-		SharedPreferences settings = ctx.getSharedPreferences(SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
-		String urlId = settings.getString("dev_identity", "https://browserid.org") + "/sign_in";
+		SharedPreferences settings = ctx.getSharedPreferences(
+				SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
+		String urlId = settings.getString("dev_identity", "https://browserid.org")
+				+ "/sign_in";
 
 		URI uriId = new URI(urlId);
 		String originId = uriId.getScheme() + "://" + uriId.getAuthority();
 
 		if (new URI(audience).getScheme().equals("file")) {
-			URI storeUri = new URI(settings.getString("dev_store", "https://apps-preview.allizom.org"));
+			URI storeUri = new URI(settings.getString("dev_sync",
+					"https://myapps.mozillalabs.com"));
 			audience = storeUri.getScheme() + "://" + storeUri.getAuthority();
 		}
 
+		JSONObject assertions = new JSONObject(settings.getString("assertions",
+				new JSONObject().toString()));
+
 		Log.d(TAG, "preVerify continues on " + urlId + " to verify " + audience);
+		
+		JSONObject event = new JSONObject().put("audience", audience).put("url", urlId).put("origin", originId);
+		
+		String assertion = assertions.optString(audience);
+		if (!TextUtils.isEmpty(assertion)) {
+			String email = verifyAssertion(assertion, audience, originId);
+			
+			if (!TextUtils.isEmpty(email)) {
+				event.put("email", email).put("assertion", assertion);
+			} else {
+				assertions.remove(audience);
+				settings.edit().putString("assertions", assertions.toString()).commit();
+			}
+		}
 
-		JSONObject assertions = new JSONObject(settings.getString("assertions", new JSONObject().toString()));
-
-		return new PluginResult(Status.OK, new JSONObject().put("audience", audience).put("url", urlId)
-				.put("origin", originId).put("assertion", assertions.optString(audience)));
+		return new PluginResult(Status.OK, event);
 	}
 
+	/**
+	 * 
+	 * @param audience
+	 * @return
+	 * @throws Exception
+	 */
 	public PluginResult duringVerify(String audience) throws Exception {
 
 		Log.d(TAG, "duringVerify continues with " + audience);
@@ -99,14 +141,18 @@ public class MozIdPlugin extends Plugin {
 		return new PluginResult(Status.OK, audience);
 	}
 
-	public PluginResult postVerify(final String audience, final String assertion) throws Exception {
+	public PluginResult postVerify(final String audience, final String assertion)
+			throws Exception {
 
 		Log.d(TAG, "postVerify assertion: " + assertion);
 
-		SharedPreferences settings = ctx.getSharedPreferences(SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
-		String urlStore = settings.getString("dev_store", "https://apps-preview.allizom.org");
+		SharedPreferences settings = ctx.getSharedPreferences(
+				SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
+		String urlStore = settings.getString("dev_store",
+				"https://apps-preview.mozilla.org");
 
-		JSONObject assertions = new JSONObject(settings.getString("assertions", new JSONObject().toString()));
+		JSONObject assertions = new JSONObject(settings.getString("assertions",
+				new JSONObject().toString()));
 		assertions.put(audience, assertion);
 		settings.edit().putString("assertions", assertions.toString()).commit();
 
@@ -118,6 +164,59 @@ public class MozIdPlugin extends Plugin {
 
 		// Log.d(TAG, "Parsed: " + certAssertion);
 
-		return new PluginResult(Status.OK, assertion);
+		return new PluginResult(Status.ERROR, assertion);
+	}
+
+	private String verifyAssertion(String assertion, String audience,
+			String storeAuthority) {
+		
+		Log.d(TAG, "verifyAssertion for " + assertion + ", " + audience + " on " + storeAuthority);
+		
+		HttpClient client = new DefaultHttpClient();
+		HttpPost request = new HttpPost(storeAuthority + "/verify");
+
+		List<NameValuePair> params = new ArrayList<NameValuePair>(2);
+		params.add(new BasicNameValuePair("audience", audience));
+		params.add(new BasicNameValuePair("assertion", assertion));
+		try {
+			request.setEntity(new UrlEncodedFormEntity(params));
+		} catch (UnsupportedEncodingException e) {
+			return null;
+		}
+
+		HttpResponse response = null;
+		try {
+			response = client.execute(request);
+		} catch (Exception e) {
+			Log.w(TAG, "verifyAssertion failed execute", e);
+			return null;
+		}
+		
+		client.getConnectionManager().shutdown();
+
+		if (response.getStatusLine().getStatusCode() != 200) {
+			Log.w(TAG, "verifyAssertion failed with status "
+					+ response.getStatusLine().getStatusCode());
+			return null;
+		}
+
+		// Evaluate response
+
+		String responseString = null;
+		JSONObject responseBody = null;
+		try {
+			responseString = EntityUtils.toString(response.getEntity());
+			responseBody = new JSONObject(responseString);
+		} catch (Exception e) {
+			Log.w(TAG, "verifyAssertion could not parse " + responseString, e);
+			return null;
+		}
+
+		if (!responseBody.has("email")) {
+			Log.w(TAG, "verifyAssertion has no email " + responseBody);
+			return null;
+		}
+
+		return responseBody.optString("email");
 	}
 }

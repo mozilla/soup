@@ -30,7 +30,7 @@ public class StoreActivity extends SoupActivity {
 		if (TextUtils.isEmpty(uri)) {
 			SharedPreferences settings = getSharedPreferences(SharedSettings.PREFS_NAME, MODE_PRIVATE);
 
-			uri = settings.getString("dev_store", "https://apps-preview.allizom.org");
+			uri = settings.getString("dev_store", "https://apps-preview.mozilla.org");
 		}
 
 		if (!onCreateLayout()) { // Webkit existed

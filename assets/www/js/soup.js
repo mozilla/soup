@@ -61,14 +61,15 @@ document.addEventListener('deviceready', function() {
 	console.log("navigator.id.getVerifiedEmail");
 	
 	navigator.id.getVerifiedEmail(function(assertion) {
+		
 		navigator.mozApps.mgmt.list(function(list) {
-			if (!list.length) {
-				alert('No apps installed!');
-				return;
-			}
-			
 			var container = document.getElementById('myapps');
 			container.innerHTML = '';
+			
+			if (!list || !list.length) {
+				container.innerHTML = 'No apps installed!';
+				return;
+			}
 			
 			list.forEach(function(data) {
 				var app = new soup.App(data);
@@ -92,6 +93,7 @@ document.addEventListener('deviceready', function() {
 			}
 		});
 	});
+	
 
 	// var apps = document.getElementsByClassName("app");
 	// for (var i = 0; i < apps.length; i++) {
