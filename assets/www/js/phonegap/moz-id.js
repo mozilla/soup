@@ -1,25 +1,39 @@
-(function() {
-	
+(function(context) {
+
+if (window.plugins.mozId) return;
+
 function MozId() {
 };
 
-MozId.prototype.getSession = function(onSuccess, onError) {
+MozId.prototype.preVerify = function(onSuccess, onError) {
   return PhoneGap.exec(
     onSuccess,
     onError,
     'MozIdPlugin',
-    'getSession',
+    'preVerify',
     []
   );
 };
 
-MozId.prototype.postVerify = function(assertion, nSuccess, onError) {
+
+MozId.prototype.duringVerify = function(audience, onSuccess, onError) {
+  return PhoneGap.exec(
+    onSuccess,
+    onError,
+    'MozIdPlugin',
+    'duringVerify',
+    [audience]
+  );
+};
+
+
+MozId.prototype.postVerify = function(audience, assertion, onSuccess, onError) {
   return PhoneGap.exec(
     onSuccess,
     onError,
     'MozIdPlugin',
     'postVerify',
-    [assertion]
+    [audience, assertion]
   );
 };
 
@@ -27,4 +41,4 @@ PhoneGap.addConstructor(function() {
   PhoneGap.addPlugin('mozId', new MozId());
 });
 
-})();
+})(this);

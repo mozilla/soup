@@ -16,6 +16,15 @@
 
 package org.mozilla.labs.Soup.provider;
 
+import java.util.HashMap;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.mozilla.labs.Soup.app.SoupActivity;
+import org.mozilla.labs.Soup.http.ImageFactory;
+import org.mozilla.labs.Soup.provider.AppsContract.Apps;
+
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -28,24 +37,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.LiveFolders;
 import android.text.TextUtils;
 import android.util.Log;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URL;
-import java.util.HashMap;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.mozilla.labs.Soup.app.SoupActivity;
-import org.mozilla.labs.Soup.http.ImageFactory;
-import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 /**
  * Provides access to a database of apps.

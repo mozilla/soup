@@ -22,7 +22,6 @@ import org.json.JSONObject;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 /**
  * Convenience definitions for AppsProvider
@@ -30,13 +29,13 @@ import android.util.Log;
 public final class AppsContract {
 	
 	/**
-     * Special value for {@link SyncColumns#UPDATED} indicating that an entry
+     * Special value for SyncColumns indicating that an entry
      * has never been updated, or doesn't exist yet.
      */
     public static final long UPDATED_NEVER = -2;
 
     /**
-     * Special value for {@link SyncColumns#UPDATED} indicating that the last
+     * Special value for SyncColumns indicating that the last
      * update time is unknown, usually when inserted from a local file source.
      */
     public static final long UPDATED_UNKNOWN = -1;

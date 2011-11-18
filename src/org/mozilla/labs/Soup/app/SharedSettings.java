@@ -16,6 +16,16 @@ public class SharedSettings extends PreferenceActivity {
 
 		getPreferenceManager().setSharedPreferencesName(PREFS_NAME);
 		addPreferencesFromResource(R.xml.preferences);
+		
+		 // List identities
+//        ListPreference listPref = new ListPreference(this);
+//        listPref.setKey("keyName"); //Refer to get the pref value
+//        listPref.setEntries("Array of values");
+//        listPref.setEntryValues("Array of item value");
+//        listPref.setDialogTitle("Dialog Title"); 
+//        listPref.setTitle("Title");
+//        listPref.setSummary("Summary");
+//        dialogBasedPrefCat.addPreference(listPref); Adding under the category
 	}
 
 }

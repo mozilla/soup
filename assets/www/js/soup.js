@@ -57,36 +57,40 @@ soup.App = (function() {
 })();
 
 document.addEventListener('deviceready', function() {
+
+	console.log("navigator.id.getVerifiedEmail");
 	
-	navigator.mozApps.mgmt.list(function(list) {
-		if (!list.length) {
-			alert('No apps installed!');
-			return;
-		}
-		
-		var container = document.getElementById('myapps');
-		container.innerHTML = '';
-		
-		list.forEach(function(data) {
-			var app = new soup.App(data);
-			app.render(container);
-		});
-		
-		// login button
-		
-		var login = document.getElementById('btn-login');
-		
-		if (login) {
-			login.addEventListener('click', function(evt) {
-				evt.preventDefault();
-				
-				navigator.id.getVerifiedEmail(function(assertion) {
-					navigator.notification.alert('Thanks for logging in!');
+	navigator.id.getVerifiedEmail(function(assertion) {
+		navigator.mozApps.mgmt.list(function(list) {
+			if (!list.length) {
+				alert('No apps installed!');
+				return;
+			}
+			
+			var container = document.getElementById('myapps');
+			container.innerHTML = '';
+			
+			list.forEach(function(data) {
+				var app = new soup.App(data);
+				app.render(container);
+			});
+			
+			// login button
+			
+			var login = document.getElementById('btn-login');
+			
+			if (login) {
+				login.addEventListener('click', function(evt) {
+					evt.preventDefault();
 					
-					login.style.display = 'none';
-				});
-			}, false);
-		}
+					navigator.id.getVerifiedEmail(function(assertion) {
+						navigator.notification.alert('Thanks for logging in!');
+						
+						login.style.display = 'none';
+					});
+				}, false);
+			}
+		});
 	});
 
 	// var apps = document.getElementsByClassName("app");

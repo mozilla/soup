@@ -10,15 +10,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
 
-import com.phonegap.*;
-
-import android.R.bool;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -38,6 +34,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+
+import com.phonegap.DroidGap;
 
 public abstract class SoupActivity extends DroidGap {
 
@@ -340,10 +338,7 @@ public abstract class SoupActivity extends DroidGap {
 		progress = new ProgressDialog(this);
 		progress.setIndeterminate(true);
 
-		// Log.d(TAG, "onCreate called with Intent " + getIntent().getAction());
-
-		// Resolve the intent
-
+		// Resolve the intent (provided by child classes)
 		this.onResolveIntent();
 	}
 

@@ -33,6 +33,7 @@
     <application
         android:icon="@drawable/soup"
         android:label="@string/app_name"
+        android:name=".app.SoupApplication"
         android:theme="@android:style/Theme.NoTitleBar" >
         <activity
             android:alwaysRetainTaskState="true"
@@ -46,11 +47,12 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <intent-filter >
-
+            <!-- Planned, to be verified -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data
                     android:host="apps*.mozilla.org"
                     android:pathPattern="*/apps/*"
@@ -86,6 +88,7 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <!-- Planned, to be verified -->
             <intent-filter >
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.EDIT" />
@@ -122,6 +125,7 @@
             android:authorities="org.mozilla.labs.Soup.provider.AppsProvider"
             android:name="org.mozilla.labs.Soup.provider.AppsProvider" />
 
+        <!-- Not provided on the Asus tablet -->
         <activity
             android:icon="@drawable/soup"
             android:label="@string/app_name_live"

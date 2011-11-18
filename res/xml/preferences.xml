@@ -2,9 +2,12 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:title="Settings" >
 
+    <!-- TODO: Replace text with @strings -->
+
     <PreferenceCategory
         android:enabled="false"
-        android:title="Identities" >
+        android:title="Identities"
+        android:key="identity_list" >
 
         <EditTextPreference
             android:defaultValue="TODO"
@@ -13,13 +16,28 @@
             android:title="Add identity" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="After installation" >
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="install_shortcut"
+            android:summary="Create app shortcut on homescreen"
+            android:title="Create shortcut" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="install_launch"
+            android:summary="Automatically run installed apps"
+            android:title="Launch after installation" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="Notifications" >
 
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="install_prompt"
-            android:summary="Prompt before installing synced apps"
-            android:title="Installation Prompt" />
+            android:summary="Prompt before installing apps from other devices"
+            android:title="Confirm synced apps" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="About" >
@@ -30,15 +48,15 @@
             android:title="Development" >
 
             <ListPreference
-                android:entries="@array/storeArray"
-                android:entryValues="@array/storeValues"
+                android:entries="@array/store_array"
+                android:entryValues="@array/store_values"
                 android:key="dev_store"
                 android:summary="Select your preferred store"
                 android:title="Store Authority" />
 
             <ListPreference
-                android:entries="@array/identityArray"
-                android:entryValues="@array/identityValues"
+                android:entries="@array/identity_array"
+                android:entryValues="@array/identity_values"
                 android:key="dev_identity"
                 android:summary="Select your preferred identity provider"
                 android:title="Identity Authority" />

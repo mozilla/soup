@@ -1,4 +1,6 @@
-(function() {
+(function(context) {
+
+if (window.plugins.mozApps) return;
 	
 function MozApps() {
 };
@@ -37,4 +39,4 @@ PhoneGap.addConstructor(function() {
   PhoneGap.addPlugin('mozApps', new MozApps());
 });
 
-})();
+})(this);
