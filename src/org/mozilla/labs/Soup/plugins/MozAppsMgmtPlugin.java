@@ -39,21 +39,7 @@ public class MozAppsMgmtPlugin extends Plugin {
 		if (ACTION_LIST.equals(action)) {
 
 			try {
-				Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, projection, null, null, Apps.DEFAULT_SORT_ORDER);
-
-				cur.moveToFirst();
-
-				JSONArray list = new JSONArray();
-
-				while (cur.isAfterLast() == false) {
-					JSONObject app = Apps.toJSONObject(cur);
-
-					if (app != null) {
-						list.put(app);
-					}
-
-					cur.moveToNext();
-				}
+				JSONArray list = Apps.syncedList(ctx);
 
 				result = new PluginResult(Status.OK, list);
 			} catch (Exception e) {

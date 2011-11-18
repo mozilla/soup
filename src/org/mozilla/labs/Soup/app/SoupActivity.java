@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -28,6 +29,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.webkit.JsPromptResult;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -87,23 +89,21 @@ public abstract class SoupActivity extends DroidGap {
 			Log.d(TAG + ".SoupChildViewClient", "onPageStarted:  " + url);
 
 			injectJavaScript(view);
-			
+
 			super.onPageStarted(view, url, favicon);
+		}
+
+		public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+			Log.d(TAG + ".SoupChildViewClient", "onReceivedSslError");
 			
+			URI uri = null;
 			try {
-				progress.setTitle("Loading " + new URI(url).getAuthority());
+				uri = new URI(view.getUrl());
 			} catch (URISyntaxException e) {
-				
 			}
-			
-			if (favicon != null) {
-				progress.setIcon(new BitmapDrawable(favicon));
-			} else {
-				progress.setIcon(null);
-			}
-			
-			if (progress.isShowing()) {
-				progress.show();
+
+			if (uri != null && uri.getHost().endsWith(".paypal.com")) {
+				handler.proceed();
 			}
 		}
 
@@ -116,8 +116,6 @@ public abstract class SoupActivity extends DroidGap {
 		public void onPageFinished(WebView view, String url) {
 			Log.d(TAG + ".SoupChildViewClient", "onPageFinished: " + url);
 
-			progress.dismiss();
-			
 			super.onPageFinished(view, url);
 		}
 
@@ -148,6 +146,20 @@ public abstract class SoupActivity extends DroidGap {
 			super(ctx);
 		}
 
+		public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+			Log.d(TAG + ".SoupViewClient", "onReceivedSslError");
+			
+			URI uri = null;
+			try {
+				uri = new URI(view.getUrl());
+			} catch (URISyntaxException e) {
+			}
+
+			if (uri != null && uri.getHost().endsWith(".paypal.com")) {
+				handler.proceed();
+			}
+		}
+
 		/*
 		 * (non-Javadoc)
 		 * 
@@ -159,24 +171,24 @@ public abstract class SoupActivity extends DroidGap {
 			Log.d(TAG + ".SoupViewClient", "onPageStarted: " + url);
 
 			injectJavaScript(view);
-			
+
 			super.onPageStarted(view, url, favicon);
-			
-			try {
-				progress.setTitle("Loading " + new URI(url).getAuthority());
-			} catch (URISyntaxException e) {
-				
-			}
-			
-			if (favicon != null) {
-				progress.setIcon(new BitmapDrawable(favicon));
-			} else {
-				progress.setIcon(null);
-			}
-			
-			if (progress.isShowing()) {
-				progress.show();
-			}
+
+//			try {
+//				progress.setTitle("Loading " + new URI(url).getAuthority());
+//			} catch (URISyntaxException e) {
+//
+//			}
+//
+//			if (favicon != null) {
+//				progress.setIcon(new BitmapDrawable(favicon));
+//			} else {
+//				progress.setIcon(null);
+//			}
+//
+//			if (!progress.isShowing()) {
+//				progress.show();
+//			}
 		}
 
 		/*
@@ -190,8 +202,8 @@ public abstract class SoupActivity extends DroidGap {
 
 			// Sets title, handled by application container
 			SoupActivity.this.setTitle(view.getTitle());
-			
-			progress.dismiss();
+
+//			progress.dismiss();
 
 			super.onPageFinished(view, url);
 		}
@@ -334,7 +346,7 @@ public abstract class SoupActivity extends DroidGap {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		progress = new ProgressDialog(this);
 		progress.setIndeterminate(true);
 

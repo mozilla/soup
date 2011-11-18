@@ -2,18 +2,13 @@
 
 	// "use strict";
 
-	if (navigator.mozSoup)
+	if (navigator.mozSoup) {
+		console.log('soup-addon.js SKIPPED');
 		return;
-
-	var options = {};
-	navigator.mozSoup = function(merge) {
-		for(var key in merge) {
-			if (merge.hasOwnProperty(key))
-				options[key] = merge[key];
-		}
-	};
+	}
+		
 	var plugins = (context.plugins = context.plugins || {}), empty = function() {
-		console.log('soup-addon.js empty()')
+		console.log('soup-addon.js empty()');
 	};
 	// TODO: Implement promise to have all calls pending until phonegap plugins are ready
 
@@ -157,6 +152,8 @@
 			else
 				plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
 		};
+		
+		navigator.mozApps = apps;
 
 		console.log('soup-addon.js bridged apps on ' + (location.host || 'file://'));
 
@@ -168,8 +165,4 @@
 	if (document.readyState == 'complete' && !PhoneGap.onDOMContentLoaded.fired) {
 		PhoneGap.onDOMContentLoaded.fire();
 	}
-
-	document.addEventListener('deviceready', function() {
-		console.log('DEVICE READY!!!');
-	}, false);
 })(this);
