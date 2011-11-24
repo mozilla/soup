@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -28,7 +29,7 @@ public class StoreActivity extends SoupActivity {
 		String uri = intent.getStringExtra("uri");
 
 		if (TextUtils.isEmpty(uri)) {
-			SharedPreferences settings = getSharedPreferences(SharedSettings.PREFS_NAME, MODE_PRIVATE);
+			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 
 			uri = settings.getString("dev_store", "https://apps-preview.mozilla.org");
 		}

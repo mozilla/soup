@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -25,6 +26,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.os.AsyncTask;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 
 /**
@@ -39,7 +41,7 @@ public class ImageFactory {
 		try {
 			bitmap = BitmapFactory.decodeStream((InputStream) new URL(uri).getContent());
 		} catch (IOException e) {
-			Log.w(TAG, "BitmapFactory.decodeStream for " + uri);
+			Log.w(TAG, "BitmapFactory.decodeStream for " + uri, e);
 			return null;
 		}
 
