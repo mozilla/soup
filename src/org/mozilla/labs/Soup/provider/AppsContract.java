@@ -34,14 +34,13 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mozilla.labs.Soup.app.SharedSettings;
-import org.mozilla.labs.Soup.app.SoupApplication;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
@@ -131,13 +130,9 @@ public final class AppsContract {
 		 */
 		public static final String MODIFIED_DATE = "modified_date";
 
-		private final static String URL_VERIFY = "https://myapps.mozillalabs.com/verify";
-
-		private final static String[] APP_PROJECTION = new String[] { Apps.ORIGIN,
+		public final static String[] APP_PROJECTION = new String[] { Apps.ORIGIN,
 				Apps.MANIFEST, Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN,
 				Apps.INSTALL_TIME };
-
-		private static JSONObject verifyAuth = null;
 
 		public static JSONObject toJSONObject(Cursor cur) {
 			String manifest = cur.getString(cur.getColumnIndex(Apps.MANIFEST));
@@ -160,186 +155,5 @@ public final class AppsContract {
 			return app;
 		}
 
-		public static JSONObject syncLogin(Context ctx) {
-
-			if (verifyAuth != null) {
-				return verifyAuth;
-			}
-			
-			Log.d(TAG, "syncLogin");
-
-			// Get config
-
-			SharedPreferences settings = ctx.getSharedPreferences(
-					SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
-			URI storeUri = null;
-			try {
-				storeUri = new URI(settings.getString("dev_sync",
-						"https://apps-preview.mozilla.org"));
-			} catch (URISyntaxException e) {
-			}
-			String audience = storeUri.getScheme() + "://" + storeUri.getAuthority();
-
-			String assertion = null;
-			try {
-				assertion = new JSONObject(settings.getString("assertions",
-						new JSONObject().toString())).optString(audience);
-			} catch (JSONException e1) {
-			}
-
-			if (assertion == null) {
-				Log.w(TAG, "syncLogin found no assertion for " + audience);
-				return null;
-			}
-
-			// Make request
-
-			String url = URL_VERIFY;
-
-			HttpClient client = new DefaultHttpClient();
-			HttpPost request = new HttpPost(url);
-
-			List<NameValuePair> params = new ArrayList<NameValuePair>(2);
-			params.add(new BasicNameValuePair("audience", audience));
-			params.add(new BasicNameValuePair("assertion", assertion));
-			try {
-				request.setEntity(new UrlEncodedFormEntity(params));
-			} catch (UnsupportedEncodingException e) {
-				Log.w(TAG, "syncLogin failed setEntity", e);
-				return null;
-			}
-
-			HttpResponse response = null;
-			try {
-				response = client.execute(request);
-			} catch (Exception e) {
-				Log.w(TAG, "syncLogin failed execute", e);
-				return null;
-			}
-
-			client.getConnectionManager().shutdown();
-
-			// Evaluate response
-
-			String responseString = null;
-			JSONObject responseBody = null;
-			try {
-				responseString = EntityUtils.toString(response.getEntity());
-				responseBody = new JSONObject(responseString);
-			} catch (Exception e) {
-				Log.w(TAG, "syncLogin failed responseBody: " + responseString, e);
-				return null;
-			}
-
-			Log.i(TAG, responseBody.toString());
-
-			verifyAuth = responseBody;
-
-			return verifyAuth;
-		}
-
-		public static JSONArray localList(Activity ctx) {
-			
-			Log.d(TAG, "localList");
-			
-			Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, APP_PROJECTION, null,
-					null, Apps.DEFAULT_SORT_ORDER);
-
-			cur.moveToFirst();
-
-			JSONArray list = new JSONArray();
-
-			while (cur.isAfterLast() == false) {
-				JSONObject app = Apps.toJSONObject(cur);
-
-				if (app != null) {
-					list.put(app);
-				}
-
-				cur.moveToNext();
-			}
-
-			return list;
-		}
-
-		public static JSONArray syncedList(Activity ctx) {
-			
-			Log.d(TAG, "syncedList");
-
-			if (syncLogin(ctx) == null) {
-				return localList(ctx);
-			}
-
-			Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, APP_PROJECTION, null,
-					null, Apps.DEFAULT_SORT_ORDER);
-
-			cur.moveToFirst();
-
-			JSONObject list = new JSONObject();
-
-			while (cur.isAfterLast() == false) {
-				JSONObject app = Apps.toJSONObject(cur);
-
-				if (app != null) {
-					try {
-						list.put(app.optString("origin"), app);
-					} catch (JSONException e) {
-					}
-				}
-
-				cur.moveToNext();
-			}
-
-			// Prepare request
-
-			SharedPreferences settings = ctx.getSharedPreferences(
-					SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
-			int since = settings.getInt("sync_since", 0);
-
-			Uri.Builder builder = Uri.parse(verifyAuth.optString("collection_url"))
-					.buildUpon();
-			builder.appendQueryParameter("since", String.valueOf(since));
-			String url = builder.build().toString();
-
-			// Make request
-
-			HttpClient client = new DefaultHttpClient();
-			HttpGet request = new HttpGet(url);
-
-			request.addHeader("Authorization",
-					verifyAuth.optString("http_authorization"));
-
-			HttpResponse response = null;
-			try {
-				response = client.execute(request);
-			} catch (Exception e) {
-				Log.w(
-						TAG,
-						"syncedList failed execute " + url + " using: "
-								+ verifyAuth.optString("http_authorization"), e);
-				return localList(ctx);
-			}
-
-			// Evaluate response
-
-			String responseString = null;
-			JSONObject responseBody = null;
-			try {
-				responseString = EntityUtils.toString(response.getEntity());
-				responseBody = new JSONObject(responseString);
-			} catch (Exception e) {
-				Log.w(
-						TAG,
-						"syncedList failed parsing for " + url + " "
-								+ response.getStatusLine() + ": " + responseString, e);
-				return localList(ctx);
-			}
-
-			client.getConnectionManager().shutdown();
-
-			Log.d(TAG, "syncedList " + responseBody);
-
-			return localList(ctx);
-		}
 	}
 }

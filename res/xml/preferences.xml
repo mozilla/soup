@@ -48,28 +48,28 @@
             android:title="Development" >
 
             <ListPreference
-                android:defaultValue="https://apps-preview.mozilla.org"
+                android:defaultValue="@string/store_default"
                 android:entries="@array/store_array"
                 android:entryValues="@array/store_values"
                 android:key="dev_store"
                 android:summary="Select your preferred store"
-                android:title="Store Authority" />
+                android:title="Store Provider" />
 
             <ListPreference
-                android:defaultValue="https://browserid.org"
+                android:defaultValue="@string/identity_default"
                 android:entries="@array/identity_array"
                 android:entryValues="@array/identity_values"
                 android:key="dev_identity"
                 android:summary="Select your preferred identity provider"
-                android:title="Identity Authority" />
+                android:title="Identity Provider" />
 
             <ListPreference
-                android:defaultValue="https://myapps.mozillalabs.com"
+                android:defaultValue="@string/sync_default"
                 android:entries="@array/sync_array"
                 android:entryValues="@array/sync_values"
                 android:key="dev_sync"
                 android:summary="Select your sync provider"
-                android:title="Sync Authority" />
+                android:title="Sync Provider" />
         </PreferenceScreen>
 
         <EditTextPreference

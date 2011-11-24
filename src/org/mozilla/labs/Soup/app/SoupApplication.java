@@ -3,7 +3,6 @@ package org.mozilla.labs.Soup.app;
 import org.mozilla.labs.Soup.R;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 

@@ -33,8 +33,7 @@
     <application
         android:icon="@drawable/soup"
         android:label="@string/app_name"
-        android:name=".app.SoupApplication"
-        android:theme="@android:style/Theme.NoTitleBar" >
+        android:name=".app.SoupApplication" >
         <activity
             android:alwaysRetainTaskState="true"
             android:configChanges="orientation|keyboardHidden"
@@ -48,7 +47,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- Planned, to be verified -->
-            <intent-filter>
+            <intent-filter >
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -152,6 +151,35 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity-alias>
+
+        <service android:name=".service.SyncService" />
+        <service
+            android:exported="true"
+            android:name="AuthenticatationService"
+            android:process=":auth" >
+            <intent-filter >
+                <action android:name=".service.AccountAuthenticator" >
+                </action>
+            </intent-filter>
+
+            <meta-data
+                android:name=".service.AccountAuthenticator"
+                android:resource="@xml/authenticator" >
+            </meta-data>
+        </service>
+        <!--
+        <service
+            android:exported="true"
+            android:name=".service.SyncService" >
+            <intent-filter >
+                <action android:name=".service.SyncAdapter" />
+            </intent-filter>
+
+            <meta-data
+                android:name=".service.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+        </service>
+        -->
     </application>
 
 </manifest>

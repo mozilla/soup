@@ -5,10 +5,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.oauth.jsontoken.JsonToken;
-import net.oauth.jsontoken.JsonTokenParser;
-import net.oauth.jsontoken.SystemClock;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -19,13 +15,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONStringer;
-import org.mozilla.labs.Soup.app.SharedSettings;
-import org.mozilla.labs.Soup.app.SoupApplication;
 
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.util.Log;
 
 import com.phonegap.api.Plugin;
@@ -80,6 +73,8 @@ public class MozIdPlugin extends Plugin {
 			result = new PluginResult(Status.INVALID_ACTION);
 		}
 
+		Log.d(TAG, "Returns " + result.getJSONString());
+
 		return result;
 	}
 
@@ -92,8 +87,8 @@ public class MozIdPlugin extends Plugin {
 	 */
 	public PluginResult preVerify(String audience) throws Exception {
 
-		SharedPreferences settings = ctx.getSharedPreferences(
-				SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
+		SharedPreferences settings = PreferenceManager
+				.getDefaultSharedPreferences(ctx);
 		String urlId = settings.getString("dev_identity", "https://browserid.org")
 				+ "/sign_in";
 
@@ -110,13 +105,14 @@ public class MozIdPlugin extends Plugin {
 				new JSONObject().toString()));
 
 		Log.d(TAG, "preVerify continues on " + urlId + " to verify " + audience);
-		
-		JSONObject event = new JSONObject().put("audience", audience).put("url", urlId).put("origin", originId);
-		
+
+		JSONObject event = new JSONObject().put("audience", audience)
+				.put("url", urlId).put("origin", originId);
+
 		String assertion = assertions.optString(audience);
 		if (!TextUtils.isEmpty(assertion)) {
 			String email = verifyAssertion(assertion, audience, originId);
-			
+
 			if (!TextUtils.isEmpty(email)) {
 				event.put("email", email).put("assertion", assertion);
 			} else {
@@ -124,6 +120,8 @@ public class MozIdPlugin extends Plugin {
 				settings.edit().putString("assertions", assertions.toString()).commit();
 			}
 		}
+
+		Log.d(TAG, "preVerify returns " + event);
 
 		return new PluginResult(Status.OK, event);
 	}
@@ -146,10 +144,8 @@ public class MozIdPlugin extends Plugin {
 
 		Log.d(TAG, "postVerify assertion: " + assertion);
 
-		SharedPreferences settings = ctx.getSharedPreferences(
-				SharedSettings.PREFS_NAME, SoupApplication.MODE_PRIVATE);
-		String urlStore = settings.getString("dev_store",
-				"https://apps-preview.mozilla.org");
+		SharedPreferences settings = PreferenceManager
+				.getDefaultSharedPreferences(ctx);
 
 		JSONObject assertions = new JSONObject(settings.getString("assertions",
 				new JSONObject().toString()));
@@ -169,9 +165,10 @@ public class MozIdPlugin extends Plugin {
 
 	private String verifyAssertion(String assertion, String audience,
 			String storeAuthority) {
-		
-		Log.d(TAG, "verifyAssertion for " + assertion + ", " + audience + " on " + storeAuthority);
-		
+
+		Log.d(TAG, "verifyAssertion for " + assertion + ", " + audience + " on "
+				+ storeAuthority);
+
 		HttpClient client = new DefaultHttpClient();
 		HttpPost request = new HttpPost(storeAuthority + "/verify");
 
@@ -191,7 +188,7 @@ public class MozIdPlugin extends Plugin {
 			Log.w(TAG, "verifyAssertion failed execute", e);
 			return null;
 		}
-		
+
 		client.getConnectionManager().shutdown();
 
 		if (response.getStatusLine().getStatusCode() != 200) {

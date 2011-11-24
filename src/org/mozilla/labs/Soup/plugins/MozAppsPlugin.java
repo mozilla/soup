@@ -1,16 +1,20 @@
 package org.mozilla.labs.Soup.plugins;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
 import org.mozilla.labs.Soup.app.AppActivity;
-import org.mozilla.labs.Soup.app.SharedSettings;
-import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
@@ -23,6 +27,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -37,20 +42,6 @@ public class MozAppsPlugin extends Plugin {
 	public static final String ACTION_INSTALL = "install";
 
 	public static final String ACTION_AM_INSTALLED = "amInstalled";
-
-	private Cursor findAppByOrigin(String origin) {
-		String[] projection = new String[] { Apps.ORIGIN, Apps.MANIFEST, Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN,
-				Apps.INSTALL_TIME };
-
-		Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, projection, Apps.ORIGIN + " = ?", new String[] { origin },
-				Apps.DEFAULT_SORT_ORDER);
-
-		if (cur.moveToFirst() == false) {
-			return null;
-		}
-
-		return cur;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -80,8 +71,10 @@ public class MozAppsPlugin extends Plugin {
 
 					ctx.runOnUiThread(new Runnable() {
 						public void run() {
-							Toast.makeText(ctx, app.optJSONObject("manifest").optString("name") + " already installed",
-									Toast.LENGTH_LONG).show();
+							Toast.makeText(
+									ctx,
+									app.optJSONObject("manifest").optString("name")
+											+ " already installed", Toast.LENGTH_LONG).show();
 						}
 					});
 
@@ -122,10 +115,27 @@ public class MozAppsPlugin extends Plugin {
 			result = new PluginResult(Status.INVALID_ACTION);
 		}
 
+		Log.d(TAG, "Returns " + result.getJSONString());
+
 		return result;
 	}
 
-	public synchronized void install(final String callbackId, final String manifestUri, final JSONObject install_data,
+	private Cursor findAppByOrigin(String origin) {
+		String[] projection = new String[] { Apps.ORIGIN, Apps.MANIFEST,
+				Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN, Apps.INSTALL_TIME };
+
+		Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, projection, Apps.ORIGIN
+				+ " = ?", new String[] { origin }, Apps.DEFAULT_SORT_ORDER);
+
+		if (cur.moveToFirst() == false) {
+			return null;
+		}
+
+		return cur;
+	}
+
+	public synchronized void install(final String callbackId,
+			final String manifestUri, final JSONObject install_data,
 			final String origin) throws Exception {
 		HttpClient client = new DefaultHttpClient();
 		HttpGet get = new HttpGet(manifestUri);
@@ -143,13 +153,28 @@ public class MozAppsPlugin extends Plugin {
 		values.put(Apps.NAME, name);
 		values.put(Apps.DESCRIPTION, description);
 
-		String iconUrl = origin + manifest.getJSONObject("icons").getString("128");
-		final Bitmap bitmap = ImageFactory.getResizedImage(iconUrl, 72, 72);
+		Bitmap icon = null;
+		JSONObject icons = manifest.optJSONObject("icons");
+
+		if (icons != null && icons.length() > 0) {
+			JSONArray sizes = icons.names();
+
+			List<Integer> sizesSort = new ArrayList<Integer>();
+			for (int i = 0, l = sizes.length(); i < l; i++) {
+				sizesSort.add(sizes.getInt(i));
+			}
+			String max = Collections.max(sizesSort).toString();
+
+			String iconUrl = origin + icons.getString(max);
+			icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
+		}
+
+		final Bitmap bitmap = icon;
 
 		if (bitmap != null) {
 			values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
 		} else {
-			Log.w(TAG, "Icon failed: " + iconUrl);
+			Log.w(TAG, "Could not load icon from " + icons);
 		}
 
 		values.put(Apps.ORIGIN, origin);
@@ -168,22 +193,21 @@ public class MozAppsPlugin extends Plugin {
 
 			public void run() {
 
-				SharedPreferences settings = ctx.getSharedPreferences(SharedSettings.PREFS_NAME,
-						SoupApplication.MODE_PRIVATE);
+				SharedPreferences settings = PreferenceManager
+						.getDefaultSharedPreferences(ctx);
 
 				final boolean[] appSettings = new boolean[] {
-					settings.getBoolean("install_launch", true),
-					settings.getBoolean("install_shortcut", true)
-				};
+						settings.getBoolean("install_launch", true),
+						settings.getBoolean("install_shortcut", true) };
 
 				AlertDialog.Builder installDlg = new AlertDialog.Builder(ctx);
 
 				installDlg
 						.setTitle("Install " + name + "?")
-						.setMultiChoiceItems(R.array.install_dialog_array,
-								appSettings,
+						.setMultiChoiceItems(R.array.install_dialog_array, appSettings,
 								new DialogInterface.OnMultiChoiceClickListener() {
-									public void onClick(DialogInterface dialog, int whichButton, boolean isChecked) {
+									public void onClick(DialogInterface dialog, int whichButton,
+											boolean isChecked) {
 										appSettings[whichButton] = isChecked;
 									}
 								}).setCancelable(true);
@@ -195,50 +219,52 @@ public class MozAppsPlugin extends Plugin {
 					installDlg.setIcon(new BitmapDrawable(bitmap));
 				}
 
-				installDlg.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						// FIXME: add error object
-						error(new PluginResult(Status.ERROR, 0), callbackId);
-					}
-				}).setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-
-						final Uri uri = ctx.getContentResolver().insert(Apps.CONTENT_URI, values);
-
-						if (uri == null) {
-							// FIXME: add error object
-							error(new PluginResult(Status.ERROR, 0), callbackId);
-							return;
-						}
-
-						success(new PluginResult(Status.OK, 0), callbackId);
-
-						Intent shortcutIntent = new Intent(ctx, AppActivity.class);
-						shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
-						shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-						shortcutIntent.putExtra("uri", uri);
-						
-						if (appSettings[1]) {
-							Intent intent = new Intent();
-							intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-							intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-							intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
-							if (bitmap != null) {
-								intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
+				installDlg.setNegativeButton(android.R.string.cancel,
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								// FIXME: add error object
+								error(new PluginResult(Status.ERROR, 0), callbackId);
 							}
-							// Disallow the creation of duplicate shortcuts (i.e. same
-							// url, same title, but different screen position).
-							intent.putExtra("duplicate", false);
+						}).setPositiveButton(android.R.string.ok,
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
 
-							ctx.sendBroadcast(intent);
-						}
-						
-						if (appSettings[0]) {
-							ctx.startActivity(shortcutIntent);
-						}
-						
-					}
-				});
+								final Uri uri = ctx.getContentResolver().insert(
+										Apps.CONTENT_URI, values);
+
+								if (uri == null) {
+									// FIXME: add error object
+									error(new PluginResult(Status.ERROR, 0), callbackId);
+									return;
+								}
+
+								success(new PluginResult(Status.OK, 0), callbackId);
+
+								Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, uri);
+								shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+								if (appSettings[1]) {
+									Intent intent = new Intent();
+									intent
+											.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+									intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+									intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+									if (bitmap != null) {
+										intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
+									}
+									// Disallow the creation of duplicate shortcuts (i.e. same
+									// url, same title, but different screen position).
+									intent.putExtra("duplicate", false);
+
+									ctx.sendBroadcast(intent);
+								}
+
+								if (appSettings[0]) {
+									ctx.startActivity(shortcutIntent);
+								}
+
+							}
+						});
 
 				installDlg.create();
 				installDlg.show();

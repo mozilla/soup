@@ -1,17 +1,26 @@
-(function(context) {
-
-	// "use strict";
-
-	if (navigator.mozSoup) {
-		console.log('soup-addon.js SKIPPED');
-		return;
+(function _moz_soup_init() {
+	
+	"use strict";
+	
+	// console.log('plugins.mozId ' + ((window.plugins && plugins.mozId) || 'No mozId'));
+	
+	// Fix post-load injected phonegap dependence on onDOMContentLoaded
+	if (document.readyState == 'complete' && window.PhoneGap && !PhoneGap.onDOMContentLoaded.fired) {
+		PhoneGap.onDOMContentLoaded.fire();
 	}
-		
-	var plugins = (context.plugins = context.plugins || {}), empty = function() {
-		console.log('soup-addon.js empty()');
-	};
-	// TODO: Implement promise to have all calls pending until phonegap plugins are ready
 
+	if (window._moz_soup) return;
+
+	// if (location == 'about:blank') {
+		// setTimeout(_moz_soup_init, 10);
+		// return;
+	// }
+	
+	window._moz_soup = true;
+	
+	var plugins = (window.plugins = window.plugins || {}), empty = function() {};
+	
+	// TODO: Implement promise to have all calls pending until phonegap plugins are ready
 	
 	/**
 	 * .id bridge
@@ -24,14 +33,18 @@
 		var audience, origin, assertion, popup, timer;
 
 		id.getVerifiedEmail = function(callback) {
+			console.log("getVerifiedEmail");
+			
 			plugins.mozId.preVerify(function(evt) {
 				audience = evt.audience;
 				origin = evt.origin;
 				
+				console.log("getVerifiedEmail for " + audience);
+				
 				if (evt.assertion) {
 					setTimeout(function() {
 						callback(evt.assertion);
-					}, 500);
+					}, 10);
 					return;
 				}
 				
@@ -40,8 +53,16 @@
 					audience: audience
 				});
 				
+				console.log("getVerifiedEmail starts with " + data);
+				
+				function oncomplete(assertion) {
+					callback(assertion);
+				};
 				function onmessage(evt) {
+					evt.stopPropagation();
+					
 					if (timer) {
+						console.log("cleaned postMessage setInterval");
 						clearInterval(timer);
 						timer = null;
 					}
@@ -50,8 +71,9 @@
 						return;
 					
 					window.removeEventListener('message', onmessage, false);
+					
 					if (popup) {
-						popup.close();
+						if (popup.close) popup.close();
 						popup = null;
 					}
 		
@@ -60,45 +82,55 @@
 				
 				window.addEventListener('message', onmessage, false);
 				
-				popup = window.open(evt.url);
+				console.log("getVerifiedEmail opens popup");
+				
+				popup = window.open(evt.url, '_moz_verify');
+				
+				console.log("getVerifiedEmail opened popup");
 				
 				timer = setInterval(function() {
 					if (!popup || !popup.postMessage) {
+						console.log("killed postMessage setInterval");
 						clearInterval(timer);
 						timer = null;
 					} else {
 						popup.postMessage(data, origin);
 					}
 				}, 50);
-				
-				function oncomplete(assertion) {
-					callback(assertion);
-				};
-				
 			});
 		};
 
-		console.log('soup-addon.js bridged id on ' + (location.host || 'file://'));
+		console.log('soup-addon.js bridged *id* on ' + (location.host || location));
 	})();
 
 
 	/**
 	 * .id.channel bridge
+	 * 
+	 * Targets browser-id pop ups.
 	 */
 
 	(function bridgeIdChannel() {
+		
+		// TODO: Filter to pop up!
 
 		var channel = (id.channel = id.channel || {});
 
 		channel.registerController = function(controller) {
 			
+			console.log("getVerifiedEmail channel.registerController started");
+			
 			var origin, fired;
 
 			window.addEventListener('message', function(evt) {
+				evt.stopPropagation();
+				
 				if (origin) return;
 				
 				var data = JSON.parse(evt.data);
 				origin = data.origin;
+				
+				console.log("getVerifiedEmail received first postMessage with " + evt.data);
 				
 				controller.getVerifiedEmail(data.audience, function(assertion) {
 					if (!fired) opener.postMessage(assertion, origin);
@@ -112,12 +144,14 @@
 
 		};
 		
-		var controller = $('body').controller('dialog');
+		var controller = window.$ && $('body').controller && $('body').controller('dialog');
+		// Script might got injected after load
 		if (controller) {
+			console.log("getVerifiedEmail channel.registerController restarted");
 			channel.registerController(controller);
 		}
 
-		console.log('soup-addon.js bridged id.channel on ' + (location.host || 'file://'));
+		console.log('soup-addon.js bridged *id.channel* on ' + (location.host || location));
 	})();
 
 	
@@ -167,14 +201,12 @@
 				plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
 		};
 		
-		console.log('soup-addon.js bridged apps on ' + (location.host || 'file://'));
+		console.log('soup-addon.js bridged *apps* on ' + (location.host || location));
 
 	})();
 
 	// END bridge
-
-	// Fix post-load injected phonegap dependence on onDOMContentLoaded
-	if (document.readyState == 'complete' && !PhoneGap.onDOMContentLoaded.fired) {
-		PhoneGap.onDOMContentLoaded.fire();
-	}
-})(this);
+	
+	console.log('soup-addon.js bridged on ' + (location.host || location));
+	
+})();

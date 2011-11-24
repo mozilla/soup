@@ -2,8 +2,6 @@ package org.mozilla.labs.Soup.app;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,7 +12,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Message;
@@ -47,72 +44,47 @@ public abstract class SoupActivity extends DroidGap {
 	public static final String ACTION_WEBAPP = "org.mozilla.labs.webapp";
 
 	static final FrameLayout.LayoutParams COVER_SCREEN_PARAMS = new FrameLayout.LayoutParams(
-			ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER_VERTICAL);
+			ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+			Gravity.CENTER_VERTICAL);
 
 	private SoupChromeClient appClient;
-
 	public ProgressDialog progress;
+
+	private View childContainer = null;
+	private WebView childView = null;
 
 	private class SoupChildViewClient extends WebViewClient {
 
 		public SoupChildViewClient() {
 		}
-
+		
 		/**
-		 * Give the host application a chance to take over the control when a new url is about to be loaded in the
-		 * current WebView.
+		 * Give the host application a chance to take over the control when a new url is about to be loaded in the current
+		 * WebView.
 		 * 
 		 * @param view
-		 *            The WebView that is initiating the callback.
+		 *          The WebView that is initiating the callback.
 		 * @param url
-		 *            The url to be loaded.
-		 * @return true to override, false for default behavior
-		 */
-		@Override
-		public boolean shouldOverrideUrlLoading(WebView view, String url) {
-			view.loadUrl(url);
-
-			return true;
-		}
-
-		/**
-		 * Give the host application a chance to take over the control when a new url is about to be loaded in the
-		 * current WebView.
-		 * 
-		 * @param view
-		 *            The WebView that is initiating the callback.
-		 * @param url
-		 *            The url to be loaded.
+		 *          The url to be loaded.
 		 * @return true to override, false for default behavior
 		 */
 		@Override
 		public void onPageStarted(WebView view, String url, Bitmap favicon) {
 			Log.d(TAG + ".SoupChildViewClient", "onPageStarted:  " + url);
-			
+
 			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
-				injectJavaScript(view);
+				injectJavaScript(childView, false);
 			}
 
 			super.onPageStarted(view, url, favicon);
 		}
 
-		public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+		public void onReceivedSslError(WebView view, SslErrorHandler handler,
+				SslError error) {
 			Log.d(TAG + ".SoupChildViewClient", "onReceivedSslError");
-			
+
 			// TODO: Only allow paypal, though getUrl is null here!
-//			URI uri = null;
-//			try {
-//				String url = view.getUrl();
-//				if (url != null) {
-//					uri = new URI(url);
-//				}
-//			} catch (URISyntaxException e) {
-//			}
-//
-//			if (uri != null && uri.getHost().endsWith(".paypal.com")) {
-//				handler.proceed();
-//			}
-			
+
 			handler.proceed();
 		}
 
@@ -124,6 +96,10 @@ public abstract class SoupActivity extends DroidGap {
 		@Override
 		public void onPageFinished(WebView view, String url) {
 			Log.d(TAG + ".SoupChildViewClient", "onPageFinished: " + url);
+			
+			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
+				injectJavaScript(childView, false);
+			}
 
 			super.onPageFinished(view, url);
 		}
@@ -139,7 +115,7 @@ public abstract class SoupActivity extends DroidGap {
 
 		public void onCloseWindow(WebView view) {
 			// Closing our only dialog without checking what view is!
-			appClient.onClick(view);
+			closeChildView();
 		}
 
 	}
@@ -154,21 +130,21 @@ public abstract class SoupActivity extends DroidGap {
 		public SoupViewClient(DroidGap ctx) {
 			super(ctx);
 		}
-		
 
-		public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+		public void onReceivedSslError(WebView view, SslErrorHandler handler,
+				SslError error) {
 			Log.d(TAG + ".SoupViewClient", "onReceivedSslError");
-			
-//			URI uri = null;
-//			try {
-//				uri = new URI(view.getUrl());
-//			} catch (URISyntaxException e) {
-//			}
-//
-//			if (uri != null && uri.getHost().endsWith(".paypal.com")) {
-//				handler.proceed();
-//			}
-			
+
+			// URI uri = null;
+			// try {
+			// uri = new URI(view.getUrl());
+			// } catch (URISyntaxException e) {
+			// }
+			//
+			// if (uri != null && uri.getHost().endsWith(".paypal.com")) {
+			// handler.proceed();
+			// }
+
 			handler.proceed();
 		}
 
@@ -183,26 +159,27 @@ public abstract class SoupActivity extends DroidGap {
 			Log.d(TAG + ".SoupViewClient", "onPageStarted: " + url);
 
 			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
-				injectJavaScript(view);
+				// TODO: Only inject phonegap for trusted views
+				injectJavaScript(appView, true);
 			}
 
 			super.onPageStarted(view, url, favicon);
 
-//			try {
-//				progress.setTitle("Loading " + new URI(url).getAuthority());
-//			} catch (URISyntaxException e) {
-//
-//			}
-//
-//			if (favicon != null) {
-//				progress.setIcon(new BitmapDrawable(favicon));
-//			} else {
-//				progress.setIcon(null);
-//			}
-//
-//			if (!progress.isShowing()) {
-//				progress.show();
-//			}
+			// try {
+			// progress.setTitle("Loading " + new URI(url).getAuthority());
+			// } catch (URISyntaxException e) {
+			//
+			// }
+			//
+			// if (favicon != null) {
+			// progress.setIcon(new BitmapDrawable(favicon));
+			// } else {
+			// progress.setIcon(null);
+			// }
+			//
+			// if (!progress.isShowing()) {
+			// progress.show();
+			// }
 		}
 
 		/*
@@ -213,11 +190,15 @@ public abstract class SoupActivity extends DroidGap {
 		@Override
 		public void onPageFinished(WebView view, String url) {
 			Log.d(TAG + ".SoupViewClient", "onPageFinished: " + url);
+			
+			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
+				injectJavaScript(appView, true);
+			}
 
 			// Sets title, handled by application container
 			SoupActivity.this.setTitle(view.getTitle());
 
-//			progress.dismiss();
+			// progress.dismiss();
 
 			super.onPageFinished(view, url);
 		}
@@ -229,9 +210,6 @@ public abstract class SoupActivity extends DroidGap {
 	 * WebChromeClient for main window
 	 */
 	private class SoupChromeClient extends GapClient implements OnClickListener {
-
-		private View container;
-		private WebView childView;
 
 		/**
 		 * @param context
@@ -246,12 +224,9 @@ public abstract class SoupActivity extends DroidGap {
 		 * @see android.view.View.OnClickListener#onClick(android.view.View)
 		 */
 		public void onClick(View v) {
-			Log.d(TAG + "SoupChromeClient.onClick", "Close clicked, removing Child");
+			Log.d(TAG + ".SoupChromeClient", "onClick");
 
-			childView.destroy();
-
-			ViewGroup content = (ViewGroup) getWindow().getDecorView();
-			content.removeView(container);
+			closeChildView();
 		}
 
 		/*
@@ -261,7 +236,9 @@ public abstract class SoupActivity extends DroidGap {
 		 * java.lang.String, android.webkit.JsPromptResult)
 		 */
 		@Override
-		public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+		public boolean onJsPrompt(WebView view, String url, String message,
+				String defaultValue, JsPromptResult result) {
+
 			// FIXME: This is a phonegap issue when using loadUrl to inject JS on redirecting pages
 			if (url.equals("about:blank")) {
 				result.cancel();
@@ -274,28 +251,18 @@ public abstract class SoupActivity extends DroidGap {
 		/*
 		 * (non-Javadoc)
 		 * 
-		 * @see android.webkit.WebChromeClient#onCreateWindow(android.webkit.WebView, boolean, boolean,
-		 * android.os.Message)
+		 * @see android.webkit.WebChromeClient#onCreateWindow(android.webkit.WebView, boolean, boolean, android.os.Message)
 		 */
 		@Override
-		public boolean onCreateWindow(WebView view, boolean modal, boolean user, Message result) {
-			// TODO Launch on UI thread
-			createChildWindow();
+		public boolean onCreateWindow(WebView view, boolean modal, boolean user,
+				Message result) {
 
-			WebView.WebViewTransport transport = (WebView.WebViewTransport) result.obj;
-
-			transport.setWebView(childView);
-			result.sendToTarget();
-
-			return true;
-		}
-
-		private void createChildWindow() {
 			LayoutInflater inflater = LayoutInflater.from(SoupActivity.this);
 
-			container = inflater.inflate(R.layout.popup, null);
-			childView = (WebView) container.findViewById(R.id.webViewPopup);
-			ImageButton close = (ImageButton) container.findViewById(R.id.subwindow_close);
+			childContainer = inflater.inflate(R.layout.popup, null);
+			childView = (WebView) childContainer.findViewById(R.id.webViewPopup);
+			ImageButton close = (ImageButton) childContainer
+					.findViewById(R.id.subwindow_close);
 			close.setOnClickListener(this);
 
 			childView.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
@@ -312,48 +279,62 @@ public abstract class SoupActivity extends DroidGap {
 			settings.setJavaScriptCanOpenWindowsAutomatically(true);
 
 			ViewGroup content = (ViewGroup) getWindow().getDecorView();
-			content.addView(container, COVER_SCREEN_PARAMS);
+			content.addView(childContainer, COVER_SCREEN_PARAMS);
 
 			childView.setWebViewClient(new SoupChildViewClient());
 			childView.setWebChromeClient(new SoupChildChromeClient());
 
 			childView.requestFocus(View.FOCUS_DOWN);
 			childView.requestFocusFromTouch();
+
+			WebView.WebViewTransport transport = (WebView.WebViewTransport) result.obj;
+
+			transport.setWebView(childView);
+			result.sendToTarget();
+
+			return true;
 		}
 	}
 
-	private void injectJavaScript(WebView view) {
-		Log.d(TAG, "injectJavaScript");
+	/**
+	 * Inject JavaScript into the specified webview
+	 * 
+	 * @param view
+	 * @param trusted
+	 *          View is on a trusted domain (will install phonegap)
+	 */
+	private void injectJavaScript(WebView view, boolean trusted) {
 
-		// core
-		injectSingleFile(view, "phonegap/phonegap-1.2.0.js");
-
-		// plugins
-		injectSingleFile(view, "phonegap/moz-id.js");
-		injectSingleFile(view, "phonegap/moz-apps.js");
-		injectSingleFile(view, "phonegap/moz-apps-mgmt.js");
-
-		// soup bridge
-		injectSingleFile(view, "soup-addon.js");
-	}
-
-	private void injectSingleFile(WebView view, String file) {
-		String strContent;
-
-		try {
-			InputStream is = getAssets().open("www/js/" + file);
-			int size = is.available();
-			byte[] buffer = new byte[size];
-			is.read(buffer);
-			is.close();
-			// Read the entire asset into a local byte buffer.
-			// Convert the buffer into a string.
-			strContent = new String(buffer);
-		} catch (IOException e) {
-			return;
+		String[] files;
+		if (trusted) {
+			files = new String[] { "phonegap/phonegap-1.2.0.js",
+					"phonegap/moz-id.js", "phonegap/moz-apps.js", "phonegap/moz-apps.js",
+					"phonegap/moz-apps-mgmt.js", "soup-addon.js" };
+		} else {
+			files = new String[] { "soup-addon.js" };
 		}
 
-		view.loadUrl("javascript:try {" + strContent + "} catch (e) {}");
+		StringBuilder builder = new StringBuilder();
+
+		for (String name : files) {
+			try {
+				InputStream is = getAssets().open("www/js/" + name);
+				int size = is.available();
+				byte[] buffer = new byte[size];
+				is.read(buffer);
+				is.close();
+
+				builder.append(new String(buffer));
+				builder.append("\n");
+			} catch (IOException e) {
+				Log.e(TAG, "injectJavaScript skipped " + name, e);
+			}
+		}
+
+		Log.d(TAG, "injectJavaScript: " + builder.length());
+
+		// TODO: Log errors?
+		view.loadUrl("javascript:" + builder.toString());
 	}
 
 	/** Called when the activity is first created. */
@@ -363,7 +344,7 @@ public abstract class SoupActivity extends DroidGap {
 
 		progress = new ProgressDialog(this);
 		progress.setIndeterminate(true);
-
+		
 		// Resolve the intent (provided by child classes)
 		this.onResolveIntent();
 	}
@@ -435,6 +416,14 @@ public abstract class SoupActivity extends DroidGap {
 			return false;
 		}
 
+		// If back key
+		// if (keyCode == KeyEvent.KEYCODE_BACK) {
+		// if (childView != null) {
+		// closeChildView();
+		// return false;
+		// }
+		// }
+
 		return super.onKeyDown(keyCode, event);
 	}
 
@@ -453,8 +442,8 @@ public abstract class SoupActivity extends DroidGap {
 	public boolean onPrepareOptionsMenu(Menu menu) {
 
 		// TODO: Hide login/logout based on status
-		MenuItem login = menu.findItem(R.id.global_login);
-		login.setVisible(false);
+		menu.findItem(R.id.global_login).setVisible(false);
+		menu.findItem(R.id.global_logout).setVisible(false);
 
 		return super.onPrepareOptionsMenu(menu);
 
@@ -482,6 +471,19 @@ public abstract class SoupActivity extends DroidGap {
 		return false;
 	}
 
+	public void closeChildView() {
+		if (childView == null)
+			return;
+
+		childView.destroy();
+
+		ViewGroup content = (ViewGroup) getWindow().getDecorView();
+		content.removeView(childContainer);
+
+		childContainer = null;
+		childView = null;
+	}
+
 	public static JSONArray findAll() {
 
 		JSONArray list = new JSONArray();
@@ -498,36 +500,36 @@ public abstract class SoupActivity extends DroidGap {
 			list.put(app1);
 
 			// http://sinuousgame.com/manifest.webapp
-//			JSONObject app2 = new JSONObject();
-//			app2.put("origin", "http://sinuousgame.com");
-//			app2.put("manifest_url", "http://sinuousgame.com/manifest.webapp");
-//			app2.put(
-//					"manifest",
-//					new JSONObject(
-//							"{\"name\":\"Sinuous\",\"description\":\"Avoid the red dots in this fun and addictive game.\",\"launch_path\":\"/\",\"developer\":{\"name\":\"Hakim El Hattab\",\"url\":\"http://hakim.se/experiments/\"},\"icons\":{\"128\":\"/assets/images/icon_128.png\"},\"installs_allowed_from\":[\"*\"]}"));
-//			list.put(app2);
-//
-//			// http://shazow.net
-//			// http://shazow.net/linerage/gameon/manifest.json
-//			JSONObject app3 = new JSONObject();
-//			app3.put("origin", "http://shazow.net");
-//			app3.put("manifest_url", "http://shazow.net/linerage/gameon/manifest.json");
-//			app3.put(
-//					"manifest",
-//					new JSONObject(
-//							"{\"name\":\"LineRage\",\"description\":\"You are a line. Don't hit things.\",\"launch_path\":\"/linerage/gameon/index.html\",\"developer\":{\"name\":\"Andrey Petrov\",\"url\":\"http://shazow.net\"},\"icons\":{\"16\":\"/linerage/gameon/icon_16.png\",\"32\":\"/linerage/gameon/icon_32.png\",\"128\":\"/linerage/gameon/icon_128.png\"},\"installs_allowed_from\":[\"*\"]}"));
-//			list.put(app3);
-//
-//			// http://stillalivejs.t4ils.com
-//			// http://stillalivejs.t4ils.com/play/manifest.webapp
-//			JSONObject app4 = new JSONObject();
-//			app4.put("origin", "http://stillalivejs.t4ils.com");
-//			app4.put("manifest_url", "http://stillalivejs.t4ils.com/play/manifest.webapp");
-//			app4.put(
-//					"manifest",
-//					new JSONObject(
-//							"{\"name\":\"StillAliveJS\",\"description\":\"StillAliveJS, or SaJS, is a puzzle game inspired by Portal: The Flash Version which is a 2D renewal of Portal, developed by Valve Corporation.\n\nSaJS consists primarily in a series of platform puzzles that must be solved by teleporting the character and other simple objects using a Portal Gun. The unusual physics allowed by this device is the emphasis of StillAliveJS.\",\"launch_path\":\"/play/index.html\",\"developer\":{\"name\":\"t4ils and Zeblackos\",\"url\":\"http://stillalivejs.t4ils.com/\"},\"icons\":{\"128\":\"/play/images/icon128.png\"},\"installs_allowed_from\":[\"*\"]}"));
-//			list.put(app4);
+			// JSONObject app2 = new JSONObject();
+			// app2.put("origin", "http://sinuousgame.com");
+			// app2.put("manifest_url", "http://sinuousgame.com/manifest.webapp");
+			// app2.put(
+			// "manifest",
+			// new JSONObject(
+			// "{\"name\":\"Sinuous\",\"description\":\"Avoid the red dots in this fun and addictive game.\",\"launch_path\":\"/\",\"developer\":{\"name\":\"Hakim El Hattab\",\"url\":\"http://hakim.se/experiments/\"},\"icons\":{\"128\":\"/assets/images/icon_128.png\"},\"installs_allowed_from\":[\"*\"]}"));
+			// list.put(app2);
+			//
+			// // http://shazow.net
+			// // http://shazow.net/linerage/gameon/manifest.json
+			// JSONObject app3 = new JSONObject();
+			// app3.put("origin", "http://shazow.net");
+			// app3.put("manifest_url", "http://shazow.net/linerage/gameon/manifest.json");
+			// app3.put(
+			// "manifest",
+			// new JSONObject(
+			// "{\"name\":\"LineRage\",\"description\":\"You are a line. Don't hit things.\",\"launch_path\":\"/linerage/gameon/index.html\",\"developer\":{\"name\":\"Andrey Petrov\",\"url\":\"http://shazow.net\"},\"icons\":{\"16\":\"/linerage/gameon/icon_16.png\",\"32\":\"/linerage/gameon/icon_32.png\",\"128\":\"/linerage/gameon/icon_128.png\"},\"installs_allowed_from\":[\"*\"]}"));
+			// list.put(app3);
+			//
+			// // http://stillalivejs.t4ils.com
+			// // http://stillalivejs.t4ils.com/play/manifest.webapp
+			// JSONObject app4 = new JSONObject();
+			// app4.put("origin", "http://stillalivejs.t4ils.com");
+			// app4.put("manifest_url", "http://stillalivejs.t4ils.com/play/manifest.webapp");
+			// app4.put(
+			// "manifest",
+			// new JSONObject(
+			// "{\"name\":\"StillAliveJS\",\"description\":\"StillAliveJS, or SaJS, is a puzzle game inspired by Portal: The Flash Version which is a 2D renewal of Portal, developed by Valve Corporation.\n\nSaJS consists primarily in a series of platform puzzles that must be solved by teleporting the character and other simple objects using a Portal Gun. The unusual physics allowed by this device is the emphasis of StillAliveJS.\",\"launch_path\":\"/play/index.html\",\"developer\":{\"name\":\"t4ils and Zeblackos\",\"url\":\"http://stillalivejs.t4ils.com/\"},\"icons\":{\"128\":\"/play/images/icon128.png\"},\"installs_allowed_from\":[\"*\"]}"));
+			// list.put(app4);
 
 		} catch (JSONException e) {
 		}

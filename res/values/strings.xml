@@ -1,9 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="hello">Hello World, SoupActivity!</string>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
     <string name="app_name">Soup</string>
     <string name="app_create_shortcut">Soup App</string>
-    <string name="app_name_launcher">Soup Launcher</string>
+    <string name="app_name_launcher">Soup Apps</string>
     <string name="app_name_store">Soup Store</string>
-    <string name="app_name_live">Soup Live Apps</string>
+    <string name="app_name_live">Soup Apps</string>
+
+    <!-- Preferences -->
+
+    <string-array name="store_array">
+        <item>apps-preview.mozilla.org</item>
+        <item>addons-dev.allizom.org</item>
+        <item>apps-preview-dev.allizom.org</item>
+        <item>apps-preview.allizom.org</item>
+        <item>apps.mozillalabs.com</item>
+    </string-array>
+    <string-array name="store_values">
+        <item>https://apps-preview.mozilla.org</item>
+        <item>https://addons-dev.allizom.org</item>
+        <item>https://apps-preview-dev.allizom.org</item>
+        <item>https://apps-preview.allizom.org</item>
+        <item>https://apps.mozillalabs.com/appdir/</item>
+    </string-array>
+
+    <string name="store_default">https://apps-preview.mozilla.org</string>
+
+    <string-array name="identity_array">
+        <item>dev.diresworb.org</item>
+        <item>diresworb.org</item>
+        <item>browserid.org</item>
+    </string-array>
+    <string-array name="identity_values">
+        <item>https://dev.diresworb.org/</item>
+        <item>https://diresworb.org</item>
+        <item>https://browserid.org</item>
+    </string-array>
+
+    <string name="identity_default">https://browserid.org</string>
+
+    <string-array name="sync_array">
+        <item>myapps.mozillalabs.com</item>
+    </string-array>
+    <string-array name="sync_values">
+        <item>https://myapps.mozillalabs.com</item>
+    </string-array>
+
+    <string name="sync_default">https://myapps.mozillalabs.com</string>
+
+    <!-- Dialogs -->
+
+    <string-array name="install_dialog_array">
+        <item>Create shortcut</item>
+        <item>Launch after installation</item>
+    </string-array>
+
 </resources>
