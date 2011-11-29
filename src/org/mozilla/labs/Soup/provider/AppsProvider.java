@@ -50,7 +50,7 @@ public class AppsProvider extends ContentProvider {
 	private static final String TAG = "AppsProvider";
 
 	private static final String DATABASE_NAME = "apps.db";
-	private static final int DATABASE_VERSION = 4;
+	private static final int DATABASE_VERSION = 6;
 	private static final String APPS_TABLE_NAME = "apps";
 
 	private static HashMap<String, String> sAppsProjectionMap;
@@ -74,33 +74,38 @@ public class AppsProvider extends ContentProvider {
 		@Override
 		public void onCreate(SQLiteDatabase db) {
 			Log.d(TAG + ".DatabaseHelper", "onCreate");
-			
-			db.execSQL("CREATE TABLE " + APPS_TABLE_NAME + " (" + Apps._ID + " INTEGER PRIMARY KEY," + Apps.ORIGIN
-					+ " TEXT," + Apps.NAME + " TEXT," + Apps.DESCRIPTION + " TEXT," + Apps.ICON + " TEXT,"
-					+ Apps.MANIFEST + " BLOB," + Apps.MANIFEST_URL + " TEXT," + Apps.INSTALL_DATA + " BLOB," + Apps.INSTALL_RECEIPT + " BLOB,"
-					+ Apps.INSTALL_ORIGIN + " TEXT," + Apps.INSTALL_TIME + " INTEGER," + Apps.VERIFIED_DATE + " INTEGER," + Apps.UPDATED_DATE
-					+ " INTEGER," + Apps.CREATED_DATE + " INTEGER," + Apps.MODIFIED_DATE + " INTEGER" + ");");
-			
+
+			db.execSQL("CREATE TABLE " + APPS_TABLE_NAME + " (" + Apps._ID
+					+ " INTEGER PRIMARY KEY," + Apps.ORIGIN + " TEXT," + Apps.NAME
+					+ " TEXT," + Apps.DESCRIPTION + " TEXT," + Apps.ICON + " TEXT,"
+					+ Apps.MANIFEST + " BLOB," + Apps.MANIFEST_URL + " TEXT,"
+					+ Apps.INSTALL_DATA + " BLOB," + Apps.INSTALL_RECEIPT + " BLOB,"
+					+ Apps.INSTALL_ORIGIN + " TEXT," + Apps.INSTALL_TIME + " INTEGER,"
+					+ Apps.VERIFIED_DATE + " INTEGER," + Apps.UPDATED_DATE + " INTEGER,"
+					+ Apps.DELETED + " INTEGER," + Apps.CREATED_DATE + " INTEGER,"
+					+ Apps.MODIFIED_DATE + " INTEGER" + ");");
+
 			// FIXME: ONLY development
-			
+
 			generateData(db);
 		}
 
 		private void generateData(SQLiteDatabase db) {
 			JSONArray list = SoupActivity.findAll();
-			
+
 			for (int i = 0, l = list.length(); i < l; i++) {
 				JSONObject app = list.optJSONObject(i);
-				
+
 				String origin = app.optString("origin");
 				JSONObject manifest = app.optJSONObject("manifest");
-				
+
 				ContentValues values = new ContentValues();
 				try {
 					values.put(Apps.NAME, manifest.getString("name"));
 					values.put(Apps.DESCRIPTION, manifest.getString("description"));
-					
-					String iconUrl = origin + manifest.getJSONObject("icons").getString("128");
+
+					String iconUrl = origin
+							+ manifest.getJSONObject("icons").getString("128");
 					Bitmap bitmap = ImageFactory.getResizedImage(iconUrl, 72, 72);
 
 					if (bitmap != null) {
@@ -108,20 +113,20 @@ public class AppsProvider extends ContentProvider {
 					} else {
 						Log.w(TAG + ".DatabaseHelper", "could not fetch icon");
 					}
-					
+
 					values.put(Apps.ORIGIN, origin);
 					values.put(Apps.MANIFEST_URL, app.getString("manifest_url"));
 					values.put(Apps.MANIFEST, manifest.toString());
-					
+
 					Log.d(TAG + ".DatabaseHelper", "generated " + values);
-					
+
 				} catch (JSONException e) {
 					Log.d(TAG + ".DatabaseHelper", "loadValue", e);
 					continue;
 				}
-				
+
 				Long now = Long.valueOf(System.currentTimeMillis());
-				
+
 				// Make sure that the fields are all set
 				if (values.containsKey(AppsContract.Apps.CREATED_DATE) == false) {
 					values.put(AppsContract.Apps.CREATED_DATE, now);
@@ -132,15 +137,22 @@ public class AppsProvider extends ContentProvider {
 				if (values.containsKey(AppsContract.Apps.INSTALL_TIME) == false) {
 					values.put(AppsContract.Apps.INSTALL_TIME, now);
 				}
+				if (values.containsKey(AppsContract.Apps.UPDATED_DATE) == false) {
+					values.put(AppsContract.Apps.UPDATED_DATE, now);
+				}
+				if (values.containsKey(AppsContract.Apps.DELETED) == false) {
+					values.put(AppsContract.Apps.UPDATED_DATE, 0);
+				}
 
 				if (values.containsKey(AppsContract.Apps.NAME) == false) {
 					Resources r = Resources.getSystem();
-					values.put(AppsContract.Apps.NAME, r.getString(android.R.string.untitled));
+					values.put(AppsContract.Apps.NAME,
+							r.getString(android.R.string.untitled));
 				}
 				if (values.containsKey(AppsContract.Apps.DESCRIPTION) == false) {
 					values.put(AppsContract.Apps.DESCRIPTION, "");
 				}
-				
+
 				if (values.containsKey(AppsContract.Apps.MANIFEST) == false) {
 					values.put(AppsContract.Apps.MANIFEST, new JSONObject().toString());
 				}
@@ -148,21 +160,23 @@ public class AppsProvider extends ContentProvider {
 					values.put(AppsContract.Apps.MANIFEST_URL, "");
 				}
 				if (values.containsKey(AppsContract.Apps.INSTALL_DATA) == false) {
-					values.put(AppsContract.Apps.INSTALL_DATA, new JSONObject().toString());
+					values.put(AppsContract.Apps.INSTALL_DATA,
+							new JSONObject().toString());
 				}
-				
+
 				long rowId = db.insert(APPS_TABLE_NAME, null, values);
-				
+
 				if (rowId > 0) {
 					Log.d(TAG + ".loadValues", "Added " + rowId + " with " + values);
 				}
-				
+
 			}
 		}
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			Log.w(TAG + ".DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion
+			Log.w(TAG + ".DatabaseHelper", "Upgrading database from version "
+					+ oldVersion + " to " + newVersion
 					+ ", which will destroy all old data");
 
 			db.execSQL("DROP TABLE IF EXISTS apps");
@@ -175,15 +189,16 @@ public class AppsProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		Log.d(TAG, "onCreate");
-		
+
 		mOpenHelper = new DatabaseHelper(getContext());
 		return true;
 	}
 
 	@Override
-	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+	public Cursor query(Uri uri, String[] projection, String selection,
+			String[] selectionArgs, String sortOrder) {
 		SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-		
+
 		qb.setTables(APPS_TABLE_NAME);
 
 		switch (sUriMatcher.match(uri)) {
@@ -214,7 +229,8 @@ public class AppsProvider extends ContentProvider {
 
 		// Get the database and run the query
 		SQLiteDatabase db = mOpenHelper.getReadableDatabase();
-		Cursor c = qb.query(db, projection, selection, selectionArgs, null, null, orderBy);
+		Cursor c = qb.query(db, projection, selection, selectionArgs, null, null,
+				orderBy);
 
 		// Tell the cursor what uri to watch, so it knows when its source data changes
 		c.setNotificationUri(getContext().getContentResolver(), uri);
@@ -242,7 +258,7 @@ public class AppsProvider extends ContentProvider {
 		if (sUriMatcher.match(uri) != APPS) {
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}
-		
+
 		ContentValues values;
 		if (initialValues != null) {
 			values = new ContentValues(initialValues);
@@ -265,12 +281,13 @@ public class AppsProvider extends ContentProvider {
 
 		if (values.containsKey(AppsContract.Apps.NAME) == false) {
 			Resources r = Resources.getSystem();
-			values.put(AppsContract.Apps.NAME, r.getString(android.R.string.untitled));
+			values
+					.put(AppsContract.Apps.NAME, r.getString(android.R.string.untitled));
 		}
 		if (values.containsKey(AppsContract.Apps.DESCRIPTION) == false) {
 			values.put(AppsContract.Apps.DESCRIPTION, "");
 		}
-		
+
 		if (values.containsKey(AppsContract.Apps.MANIFEST) == false) {
 			values.put(AppsContract.Apps.MANIFEST, new JSONObject().toString());
 		}
@@ -281,13 +298,21 @@ public class AppsProvider extends ContentProvider {
 			values.put(AppsContract.Apps.INSTALL_DATA, new JSONObject().toString());
 		}
 		
+		if (values.containsKey(AppsContract.Apps.DELETED) == false) {
+			values.put(AppsContract.Apps.DELETED, 0);
+		}
+		if (values.containsKey(AppsContract.Apps.UPDATED_DATE) == false) {
+			values.put(AppsContract.Apps.UPDATED_DATE, 0);
+		}
+
 		// TODO Add other defaults
 
 		SQLiteDatabase db = mOpenHelper.getWritableDatabase();
 		long rowId = db.insert(APPS_TABLE_NAME, null, values);
-		
+
 		if (rowId > 0) {
-			Uri appUri = ContentUris.withAppendedId(AppsContract.Apps.CONTENT_URI, rowId);
+			Uri appUri = ContentUris.withAppendedId(AppsContract.Apps.CONTENT_URI,
+					rowId);
 			getContext().getContentResolver().notifyChange(appUri, null);
 			return appUri;
 		}
@@ -306,8 +331,10 @@ public class AppsProvider extends ContentProvider {
 
 		case APP_ID:
 			String appId = uri.getPathSegments().get(1);
-			count = db.delete(APPS_TABLE_NAME, Apps._ID + "=" + appId
-					+ (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""), whereArgs);
+			count = db.delete(APPS_TABLE_NAME,
+					Apps._ID + "=" + appId
+							+ (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""),
+					whereArgs);
 			break;
 
 		default:
@@ -319,7 +346,8 @@ public class AppsProvider extends ContentProvider {
 	}
 
 	@Override
-	public int update(Uri uri, ContentValues values, String where, String[] whereArgs) {
+	public int update(Uri uri, ContentValues values, String where,
+			String[] whereArgs) {
 		SQLiteDatabase db = mOpenHelper.getWritableDatabase();
 		int count;
 		switch (sUriMatcher.match(uri)) {
@@ -329,8 +357,13 @@ public class AppsProvider extends ContentProvider {
 
 		case APP_ID:
 			String appId = uri.getPathSegments().get(1);
+
+			values.put(AppsContract.Apps.MODIFIED_DATE,
+					Long.valueOf(System.currentTimeMillis()));
+
 			count = db.update(APPS_TABLE_NAME, values, Apps._ID + "=" + appId
-					+ (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""), whereArgs);
+					+ (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""),
+					whereArgs);
 			break;
 
 		default:
@@ -363,11 +396,15 @@ public class AppsProvider extends ContentProvider {
 
 		// Support for Live Folders.
 		sLiveFolderProjectionMap = new HashMap<String, String>();
-		sLiveFolderProjectionMap.put(LiveFolders._ID, Apps._ID + " AS " + LiveFolders._ID);
-		sLiveFolderProjectionMap.put(LiveFolders.NAME, Apps.NAME + " AS " + LiveFolders.NAME);
-		sLiveFolderProjectionMap.put(LiveFolders.DESCRIPTION, Apps.DESCRIPTION + " AS " + LiveFolders.DESCRIPTION);
-		sLiveFolderProjectionMap.put(LiveFolders.ICON_BITMAP, Apps.ICON + " AS " + LiveFolders.ICON_BITMAP);
-		
+		sLiveFolderProjectionMap.put(LiveFolders._ID, Apps._ID + " AS "
+				+ LiveFolders._ID);
+		sLiveFolderProjectionMap.put(LiveFolders.NAME, Apps.NAME + " AS "
+				+ LiveFolders.NAME);
+		sLiveFolderProjectionMap.put(LiveFolders.DESCRIPTION, Apps.DESCRIPTION
+				+ " AS " + LiveFolders.DESCRIPTION);
+		sLiveFolderProjectionMap.put(LiveFolders.ICON_BITMAP, Apps.ICON + " AS "
+				+ LiveFolders.ICON_BITMAP);
+
 		// Add more columns here for more robust Live Folders.
 	}
 }

@@ -38,6 +38,7 @@
 			plugins.mozId.preVerify(function(evt) {
 				audience = evt.audience;
 				origin = evt.origin;
+				email = evt.email || null;
 				
 				console.log("getVerifiedEmail for " + audience);
 				
@@ -50,7 +51,8 @@
 				
 				var data = JSON.stringify({
 					origin: location.protocol + '//' + location.host,
-					audience: audience
+					audience: audience,
+					email: email
 				});
 				
 				console.log("getVerifiedEmail starts with " + data);
@@ -62,7 +64,7 @@
 					evt.stopPropagation();
 					
 					if (timer) {
-						console.log("cleaned postMessage setInterval");
+						console.log("getVerifiedEmail cleaned postMessage setInterval");
 						clearInterval(timer);
 						timer = null;
 					}
@@ -82,15 +84,11 @@
 				
 				window.addEventListener('message', onmessage, false);
 				
-				console.log("getVerifiedEmail opens popup");
-				
 				popup = window.open(evt.url, '_moz_verify');
-				
-				console.log("getVerifiedEmail opened popup");
 				
 				timer = setInterval(function() {
 					if (!popup || !popup.postMessage) {
-						console.log("killed postMessage setInterval");
+						console.log("getVerifiedEmail killed postMessage setInterval");
 						clearInterval(timer);
 						timer = null;
 					} else {
@@ -132,19 +130,27 @@
 				
 				console.log("getVerifiedEmail received first postMessage with " + evt.data);
 				
-				controller.getVerifiedEmail(data.audience, function(assertion) {
+				var cb = function(assertion) {
 					if (!fired) opener.postMessage(assertion, origin);
 					fired = true;
-				}, function() {
-					if (!fired) opener.postMessage(null, origin);
-					fired = true;
-				});
+				};
+				
+				if (data.email && 'BrowserID' in window && 'User' in BrowserID) {
+					console.log("getVerifiedEmail using BrowserID.User for " + data.email);
+					
+					BrowserID.User.setOrigin(data.audience);
+					BrowserID.User.getAssertion(data.email, cb, cb);
+				} else {
+					console.log("getVerifiedEmail using controller.getVerifiedEmail " + data.audience);
+					
+					controller.getVerifiedEmail(data.audience, cb, cb);
+				}
 				
 			}, false);
 
 		};
 		
-		var controller = window.$ && $('body').controller && $('body').controller('dialog');
+		var controller = '$' in window && $('body').controller && $('body').controller('dialog');
 		// Script might got injected after load
 		if (controller) {
 			console.log("getVerifiedEmail channel.registerController restarted");

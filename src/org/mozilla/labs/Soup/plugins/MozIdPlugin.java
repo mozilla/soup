@@ -1,20 +1,9 @@
 package org.mozilla.labs.Soup.plugins;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.mozilla.labs.Soup.service.SoupClient;
 
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -87,37 +76,52 @@ public class MozIdPlugin extends Plugin {
 	 */
 	public PluginResult preVerify(String audience) throws Exception {
 
-		SharedPreferences settings = PreferenceManager
+		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(ctx);
-		String urlId = settings.getString("dev_identity", "https://browserid.org")
+		String urlId = prefs.getString("dev_identity", "https://browserid.org")
 				+ "/sign_in";
 
-		URI uriId = new URI(urlId);
-		String originId = uriId.getScheme() + "://" + uriId.getAuthority();
+		URI identUri = new URI(urlId);
+		String identOrigin = identUri.getScheme() + "://" + identUri.getAuthority();
 
+		// Fallback to sync service audience for local dashboard
 		if (new URI(audience).getScheme().equals("file")) {
-			URI storeUri = new URI(settings.getString("dev_sync",
+			URI syncUri = new URI(prefs.getString("dev_sync",
 					"https://myapps.mozillalabs.com"));
-			audience = storeUri.getScheme() + "://" + storeUri.getAuthority();
+			audience = syncUri.getScheme() + "://" + syncUri.getAuthority();
 		}
-
-		JSONObject assertions = new JSONObject(settings.getString("assertions",
-				new JSONObject().toString()));
 
 		Log.d(TAG, "preVerify continues on " + urlId + " to verify " + audience);
 
+		JSONObject assertions = new JSONObject(prefs.getString("assertions",
+				new JSONObject().toString()));
+
 		JSONObject event = new JSONObject().put("audience", audience)
-				.put("url", urlId).put("origin", originId);
+				.put("url", urlId).put("origin", identOrigin);
+
+		String email = prefs.getString("email", null);
+		if (!TextUtils.isEmpty(email)) {
+			Log.d(TAG, "preVerify has stored email " + email);
+
+			event.put("email", email);
+		}
 
 		String assertion = assertions.optString(audience);
 		if (!TextUtils.isEmpty(assertion)) {
-			String email = verifyAssertion(assertion, audience, originId);
+			String verifiedEmail = SoupClient.verifyId(ctx, assertion, audience);
 
-			if (!TextUtils.isEmpty(email)) {
-				event.put("email", email).put("assertion", assertion);
+			Log.d(TAG, "preVerify verified " + verifiedEmail + " from " + assertion);
+
+			if (!TextUtils.isEmpty(verifiedEmail)) {
+				event.put("email", verifiedEmail).put("assertion", assertion);
+
+				if (email != verifiedEmail) {
+					prefs.edit().putString("email", verifiedEmail).commit();
+					event.put("email", email);
+				}
 			} else {
 				assertions.remove(audience);
-				settings.edit().putString("assertions", assertions.toString()).commit();
+				prefs.edit().putString("assertions", assertions.toString()).commit();
 			}
 		}
 
@@ -142,78 +146,22 @@ public class MozIdPlugin extends Plugin {
 	public PluginResult postVerify(final String audience, final String assertion)
 			throws Exception {
 
-		Log.d(TAG, "postVerify assertion: " + assertion);
-
-		SharedPreferences settings = PreferenceManager
+		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(ctx);
 
-		JSONObject assertions = new JSONObject(settings.getString("assertions",
-				new JSONObject().toString()));
-		assertions.put(audience, assertion);
-		settings.edit().putString("assertions", assertions.toString()).commit();
+		String verifiedEmail = SoupClient.verifyId(ctx, assertion, audience);
 
-		// JSONObject parsedAssertion = new JSONObject(new String(Base64.decode(assertion, Base64.DEFAULT)));
+		Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience);
 
-		// JSONObject certAssertion = new JSONObject(new
-		// String(Base64.decode(parsedAssertion.optJSONArray("certificates")
-		// .optString(1), Base64.DEFAULT)));
-
-		// Log.d(TAG, "Parsed: " + certAssertion);
+		if (verifiedEmail != null) {
+			JSONObject assertions = new JSONObject(prefs.getString("assertions",
+					new JSONObject().toString()));
+			assertions.put(audience, assertion);
+			prefs.edit().putString("assertions", assertions.toString())
+					.putString("email", verifiedEmail).commit();
+		}
 
 		return new PluginResult(Status.ERROR, assertion);
 	}
 
-	private String verifyAssertion(String assertion, String audience,
-			String storeAuthority) {
-
-		Log.d(TAG, "verifyAssertion for " + assertion + ", " + audience + " on "
-				+ storeAuthority);
-
-		HttpClient client = new DefaultHttpClient();
-		HttpPost request = new HttpPost(storeAuthority + "/verify");
-
-		List<NameValuePair> params = new ArrayList<NameValuePair>(2);
-		params.add(new BasicNameValuePair("audience", audience));
-		params.add(new BasicNameValuePair("assertion", assertion));
-		try {
-			request.setEntity(new UrlEncodedFormEntity(params));
-		} catch (UnsupportedEncodingException e) {
-			return null;
-		}
-
-		HttpResponse response = null;
-		try {
-			response = client.execute(request);
-		} catch (Exception e) {
-			Log.w(TAG, "verifyAssertion failed execute", e);
-			return null;
-		}
-
-		client.getConnectionManager().shutdown();
-
-		if (response.getStatusLine().getStatusCode() != 200) {
-			Log.w(TAG, "verifyAssertion failed with status "
-					+ response.getStatusLine().getStatusCode());
-			return null;
-		}
-
-		// Evaluate response
-
-		String responseString = null;
-		JSONObject responseBody = null;
-		try {
-			responseString = EntityUtils.toString(response.getEntity());
-			responseBody = new JSONObject(responseString);
-		} catch (Exception e) {
-			Log.w(TAG, "verifyAssertion could not parse " + responseString, e);
-			return null;
-		}
-
-		if (!responseBody.has("email")) {
-			Log.w(TAG, "verifyAssertion has no email " + responseBody);
-			return null;
-		}
-
-		return responseBody.optString("email");
-	}
 }

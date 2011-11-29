@@ -16,39 +16,19 @@
 
 package org.mozilla.labs.Soup.provider;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 /**
  * Convenience definitions for AppsProvider
  */
 public final class AppsContract {
 
+	@SuppressWarnings("unused")
 	private static final String TAG = "AppsContract";
 
 	/**
@@ -112,6 +92,8 @@ public final class AppsContract {
 
 		public static final String UPDATED_DATE = "updated_date";
 
+		public static final String DELETED = "deleted";
+
 		public static final String VERIFIED_DATE = "verified_date";
 
 		/**
@@ -132,11 +114,22 @@ public final class AppsContract {
 
 		public final static String[] APP_PROJECTION = new String[] { Apps.ORIGIN,
 				Apps.MANIFEST, Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN,
-				Apps.INSTALL_TIME };
+				Apps.INSTALL_TIME, Apps.MODIFIED_DATE, Apps.DELETED };
 
 		public static JSONObject toJSONObject(Cursor cur) {
-			String manifest = cur.getString(cur.getColumnIndex(Apps.MANIFEST));
+			return toJSONObject(cur, false);
+		}
 
+		public static JSONObject toJSONObject(Cursor cur, boolean extended) {
+			int deleted = cur.getInt(cur.getColumnIndex(Apps.DELETED));
+
+			// Skip deleted entries for non-sync use
+			if (!extended && deleted != 1) {
+				return null;
+			}
+			
+			String manifest = cur.getString(cur.getColumnIndex(Apps.MANIFEST));
+			
 			JSONObject app = new JSONObject();
 
 			try {
@@ -147,7 +140,13 @@ public final class AppsContract {
 				app.put("install_origin",
 						cur.getString(cur.getColumnIndex(Apps.INSTALL_ORIGIN)));
 				app.put("install_time",
-						cur.getString(cur.getColumnIndex(Apps.INSTALL_TIME)));
+						cur.getFloat(cur.getColumnIndex(Apps.INSTALL_TIME)));
+
+				if (extended) {
+					app.put("last_modified",
+							cur.getLong(cur.getColumnIndex(Apps.MODIFIED_DATE)));
+					app.put("deleted", deleted);
+				}
 			} catch (JSONException e) {
 				return null;
 			}

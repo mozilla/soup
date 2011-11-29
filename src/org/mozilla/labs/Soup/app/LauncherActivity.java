@@ -24,6 +24,8 @@ public class LauncherActivity extends SoupActivity {
 		// Init web views
 
 		if (onCreateLayout()) {
+			
+			sync();
 
 			// only set URL for fresh views
 

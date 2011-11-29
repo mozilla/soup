@@ -98,18 +98,6 @@
                 <data android:mimeType="vnd.android.cursor.dir/vnd.mozilla.apps" />
             </intent-filter>
         </activity>
-        <!-- Compat for old shortcuts -->
-        <activity-alias
-            android:label="@string/app_name"
-            android:name=".SoupActivity"
-            android:targetActivity=".app.AppActivity" >
-            <intent-filter >
-                <action android:name="org.mozilla.labs.WEBAPP" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity-alias>
-
         <activity
             android:label="Settings"
             android:name=".app.SharedSettings" >
@@ -124,7 +112,8 @@
             android:authorities="org.mozilla.labs.Soup.provider.AppsProvider"
             android:name="org.mozilla.labs.Soup.provider.AppsProvider" />
 
-        <!-- Not provided on the Asus tablet -->
+        <!-- Shortcuts -->
+
         <activity
             android:icon="@drawable/soup"
             android:label="@string/app_name_live"
@@ -136,15 +125,11 @@
             </intent-filter>
         </activity>
 
-        <!-- It is recommended that you use an activity-alias to provide the "CREATE_SHORTCUT" -->
-        <!-- intent-filter.  This gives you a way to set the text (and optionally the -->
-        <!-- icon) that will be seen in the launcher's create-shortcut user interface. -->
         <activity-alias
             android:label="@string/app_create_shortcut"
             android:name=".app.LauncherActivity.Shortcut"
             android:targetActivity=".app.LauncherActivity" >
 
-            <!-- This intent-filter allows your shortcuts to be created in the launcher. -->
             <intent-filter >
                 <action android:name="android.intent.action.CREATE_SHORTCUT" />
 
@@ -152,7 +137,24 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Compat for old shortcuts -->
+
+        <activity-alias
+            android:label="@string/app_name"
+            android:name=".SoupActivity"
+            android:targetActivity=".app.AppActivity" >
+            <intent-filter >
+                <action android:name="org.mozilla.labs.WEBAPP" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Other manifest items -->
+
         <service android:name=".service.SyncService" />
+
+        <!--
         <service
             android:exported="true"
             android:name="AuthenticatationService"
@@ -167,9 +169,8 @@
                 android:resource="@xml/authenticator" >
             </meta-data>
         </service>
-        <!--
+
         <service
-            android:exported="true"
             android:name=".service.SyncService" >
             <intent-filter >
                 <action android:name=".service.SyncAdapter" />

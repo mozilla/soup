@@ -6,8 +6,11 @@ import org.json.JSONObject;
 import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.database.Cursor;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -107,6 +110,8 @@ public class MozAppsMgmtPlugin extends Plugin {
 	}
 
 	private PluginResult list() {
+		// TODO: Wait for sync
+		
 		Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, Apps.APP_PROJECTION, null,
 				null, Apps.DEFAULT_SORT_ORDER);
 
@@ -125,5 +130,35 @@ public class MozAppsMgmtPlugin extends Plugin {
 		}
 
 		return new PluginResult(Status.OK, list);
+	}
+	
+	/**
+	 * ContentObserver for Apps
+	 */
+  public class AppsObserver extends ContentObserver {
+  	 
+    public AppsObserver(Handler handler) {
+        super(handler);
+    }
+
+    @Override
+    public boolean deliverSelfNotifications() {
+        return super.deliverSelfNotifications();
+    }
+
+    @Override
+    public void onChange(boolean selfChange) {
+        super.onChange(selfChange);
+
+        // Send the on change message to your database manager.
+        watch();
+    }
+}
+	
+	private void watch() {
+		AppsObserver observer = new AppsObserver(new Handler());
+		 
+		ContentResolver resolver = ctx.getContentResolver();
+		resolver.registerContentObserver(Apps.CONTENT_URI, true, observer);
 	}
 }
