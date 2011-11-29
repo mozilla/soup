@@ -1,7 +1,6 @@
 package org.mozilla.labs.Soup.plugins;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,10 +10,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
-import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
@@ -193,12 +190,12 @@ public class MozAppsPlugin extends Plugin {
 
 			public void run() {
 
-				SharedPreferences settings = PreferenceManager
+				SharedPreferences prefs = PreferenceManager
 						.getDefaultSharedPreferences(ctx);
 
 				final boolean[] appSettings = new boolean[] {
-						settings.getBoolean("install_launch", true),
-						settings.getBoolean("install_shortcut", true) };
+						prefs.getBoolean("install_launch", true),
+						prefs.getBoolean("install_shortcut", true) };
 
 				AlertDialog.Builder installDlg = new AlertDialog.Builder(ctx);
 

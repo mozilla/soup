@@ -29,9 +29,9 @@ public class StoreActivity extends SoupActivity {
 		String uri = intent.getStringExtra("uri");
 
 		if (TextUtils.isEmpty(uri)) {
-			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-			uri = settings.getString("dev_store", "https://apps-preview.mozilla.org");
+			uri = prefs.getString("dev_store", "https://apps-preview.mozilla.org");
 		}
 
 		if (!onCreateLayout()) { // Webkit existed

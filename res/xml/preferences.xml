@@ -10,9 +10,8 @@
         android:title="Identities" >
 
         <EditTextPreference
-            android:defaultValue="TODO"
-            android:key="add_account"
-            android:summary="Add additional identities"
+            android:key="email"
+            android:summary="Add more emails"
             android:title="Add identity" />
     </PreferenceCategory>
 

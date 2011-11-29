@@ -28,8 +28,8 @@ soup.App = (function() {
 		el.className = 'app';
 		
 		var img = document.createElement('img');
-		if (this.manifest.icons[128]) {
-			img.src = this.data.origin + this.manifest.icons[128];
+		if (this.manifest.icons && this.manifest.icons['128']) {
+			img.src = this.data.origin + this.manifest.icons['128'];
 		} else {
 			img.src = 'http://proness.kix.in/misc/etherpal96.png';
 		}
