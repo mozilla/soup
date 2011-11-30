@@ -12,6 +12,7 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
+import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
@@ -36,10 +37,6 @@ public class MozAppsPlugin extends Plugin {
 
 	private static final String TAG = "MozAppsPlugin";
 
-	public static final String ACTION_INSTALL = "install";
-
-	public static final String ACTION_AM_INSTALLED = "amInstalled";
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -49,17 +46,17 @@ public class MozAppsPlugin extends Plugin {
 	public PluginResult execute(String action, JSONArray data, String callback) {
 		Log.d(TAG, "Called with " + action);
 
-		PluginResult result = null;
-
 		Uri originUri = Uri.parse(data.optString(0, webView.getUrl()));
 		String origin = originUri.getScheme() + "://" + originUri.getAuthority();
 
-		Cursor cur = findAppByOrigin(origin);
+		Cursor cur = Apps.findAppByOrigin(ctx, origin);
 
-		if (ACTION_INSTALL.equals(action)) {
+		try {
 
-			try {
+			if (action.equals("install")) {
+
 				if (cur != null) {
+
 					// TODO: Update install_data
 
 					final JSONObject app = Apps.toJSONObject(cur);
@@ -68,70 +65,46 @@ public class MozAppsPlugin extends Plugin {
 
 					ctx.runOnUiThread(new Runnable() {
 						public void run() {
-							Toast.makeText(
-									ctx,
-									app.optJSONObject("manifest").optString("name")
-											+ " already installed", Toast.LENGTH_LONG).show();
+							Toast.makeText(ctx,
+									app.optJSONObject("manifest").optString("name") + " updated",
+									Toast.LENGTH_LONG).show();
 						}
 					});
 
-					result = new PluginResult(Status.OK, app);
-				} else {
-
-					Log.d(TAG, "Install dance");
-					install(callback, originUri.toString(), data.optJSONObject(1), origin);
-					Log.d(TAG, "Install dance DONE");
-
-					result = new PluginResult(Status.NO_RESULT);
-					result.setKeepCallback(true);
+					return new PluginResult(Status.OK, app);
 				}
 
-			} catch (Exception e) {
-				Log.w(TAG, action + " failed", e);
-				result = new PluginResult(Status.JSON_EXCEPTION);
-			}
-		} else if (ACTION_AM_INSTALLED.equals(action)) {
-			try {
+				return install(callback, originUri.toString(), data.optJSONObject(1),
+						origin);
+
+			} else if (action.equals("amInstalled")) {
+
 				if (cur != null) {
 					JSONObject app = Apps.toJSONObject(cur);
 
 					if (app != null) {
-						result = new PluginResult(Status.OK, app);
-					} else {
-						result = new PluginResult(Status.ERROR);
+						return new PluginResult(Status.OK, app);
 					}
-				} else {
-					result = new PluginResult(Status.ERROR);
+
+					return new PluginResult(Status.ERROR);
 				}
 
-			} catch (Exception e) {
-				Log.w(TAG, action + " failed", e);
-				result = new PluginResult(Status.JSON_EXCEPTION);
+				return new PluginResult(Status.ERROR);
 			}
-		} else {
-			result = new PluginResult(Status.INVALID_ACTION);
+
+		} catch (Exception e) {
+			Log.w(TAG, action + " failed", e);
+			return new PluginResult(Status.JSON_EXCEPTION);
 		}
 
-		Log.d(TAG, "Returns " + result.getJSONString());
-
-		return result;
-	}
-
-	private Cursor findAppByOrigin(String origin) {
-		String[] projection = new String[] { Apps.ORIGIN, Apps.MANIFEST,
-				Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN, Apps.INSTALL_TIME };
-
-		Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, projection, Apps.ORIGIN
-				+ " = ?", new String[] { origin }, Apps.DEFAULT_SORT_ORDER);
-
-		if (cur.moveToFirst() == false) {
-			return null;
+		if (cur != null) {
+			cur.close();
 		}
 
-		return cur;
+		return new PluginResult(Status.INVALID_ACTION);
 	}
 
-	public synchronized void install(final String callbackId,
+	public PluginResult install(final String callbackId,
 			final String manifestUri, final JSONObject install_data,
 			final String origin) throws Exception {
 		HttpClient client = new DefaultHttpClient();
@@ -240,6 +213,9 @@ public class MozAppsPlugin extends Plugin {
 								Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, uri);
 								shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
+								// TODO: Move one more place to sync
+								((SoupApplication) ctx.getApplication()).triggerSync();
+
 								if (appSettings[1]) {
 									Intent intent = new Intent();
 									intent
@@ -267,5 +243,9 @@ public class MozAppsPlugin extends Plugin {
 				installDlg.show();
 			}
 		});
+
+		PluginResult result = new PluginResult(Status.NO_RESULT);
+		result.setKeepCallback(true);
+		return result;
 	}
 }

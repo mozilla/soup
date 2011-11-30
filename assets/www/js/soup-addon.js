@@ -206,6 +206,20 @@
 			else
 				plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
 		};
+
+		apps.mgmt.watchUpdates = function(onsuccess) {
+			if (!plugins.mozAppsMgmt)
+				return 0;
+				
+			return plugins.mozAppsMgmt.watchUpdates(onsuccess);
+		};
+		
+		apps.mgmt.clearWatch = function(id) {
+			if (!plugins.mozAppsMgmt)
+				return null;
+				
+			return plugins.mozAppsMgmt.clearWatch(id);
+		};
 		
 		console.log('soup-addon.js bridged *apps* on ' + (location.host || location));
 

@@ -7,8 +7,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
-import org.mozilla.labs.Soup.service.DetachableResultReceiver;
-import org.mozilla.labs.Soup.service.SyncService;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -36,12 +34,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import com.phonegap.DroidGap;
 
-public abstract class SoupActivity extends DroidGap implements
-		DetachableResultReceiver.Receiver {
+public abstract class SoupActivity extends DroidGap {
 
 	private static final String TAG = "SoupActivity";
 
@@ -56,9 +52,6 @@ public abstract class SoupActivity extends DroidGap implements
 
 	private View childContainer = null;
 	private WebView childView = null;
-
-	private DetachableResultReceiver receiver;
-	private boolean syncStarted = false;
 
 	private class SoupChildViewClient extends WebViewClient {
 
@@ -489,36 +482,6 @@ public abstract class SoupActivity extends DroidGap implements
 
 		childContainer = null;
 		childView = null;
-	}
-
-	protected void sync() {
-		if (syncStarted)
-			return;
-
-		Toast.makeText(this, "Starting sync", Toast.LENGTH_SHORT).show();
-
-		final Intent intent = new Intent(Intent.ACTION_SYNC, null, this,
-				SyncService.class);
-		intent.putExtra(SyncService.EXTRA_STATUS_RECEIVER, receiver);
-		startService(intent);
-	}
-
-	public void onReceiveResult(int resultCode, Bundle resultData) {
-		switch (resultCode) {
-		case SyncService.STATUS_RUNNING:
-			// show progress
-			break;
-		case SyncService.STATUS_FINISHED:
-			syncStarted = false;
-			// List results = resultData.getParcelableList("results");
-			// do something interesting
-			// hide progress
-			break;
-		case SyncService.STATUS_ERROR:
-			
-			// handle the error;
-			break;
-		}
 	}
 
 	public static JSONArray findAll() {

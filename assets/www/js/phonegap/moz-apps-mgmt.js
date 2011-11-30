@@ -25,6 +25,26 @@ MozAppsMgmt.prototype.launch = function(origin, onSuccess, onError) {
   );
 };
 
+MozAppsMgmt.prototype.watchUpdates = function(onSuccess) {
+  return PhoneGap.exec(
+    onSuccess,
+    null,
+    'MozAppsMgmtPlugin',
+    'watchUpdates',
+    []
+  );
+};
+
+MozAppsMgmt.prototype.clearWatch = function(id) {
+  return PhoneGap.exec(
+    null,
+    null,
+    'MozAppsMgmtPlugin',
+    'clearWatch',
+    [id]
+  );
+};
+
 PhoneGap.addConstructor(function() {
   PhoneGap.addPlugin('mozAppsMgmt', new MozAppsMgmt());
 });
