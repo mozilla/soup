@@ -16,12 +16,22 @@
 
 package org.mozilla.labs.Soup.provider;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.labs.Soup.http.ImageFactory;
 
+import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 /**
  * Convenience definitions for AppsProvider
@@ -90,9 +100,13 @@ public final class AppsContract {
 
 		public static final String INSTALL_TIME = "install_time";
 
-		public static final String UPDATED_DATE = "updated_date";
+		public static final String SYNCED_DATE = "synced_date";
 
-		public static final String DELETED = "deleted";
+		public static final String STATUS = "status";
+
+		public static enum STATUS_ENUM {
+			OK, DELETED
+		}
 
 		public static final String VERIFIED_DATE = "verified_date";
 
@@ -112,24 +126,26 @@ public final class AppsContract {
 		 */
 		public static final String MODIFIED_DATE = "modified_date";
 
-		public final static String[] APP_PROJECTION = new String[] { Apps.ORIGIN,
-				Apps.MANIFEST, Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN,
-				Apps.INSTALL_TIME, Apps.MODIFIED_DATE, Apps.DELETED };
+		public final static String[] APP_PROJECTION = new String[] { Apps._ID,
+				Apps.ORIGIN, Apps.MANIFEST, Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN,
+				Apps.INSTALL_TIME, Apps.MODIFIED_DATE, Apps.STATUS };
 
 		public static JSONObject toJSONObject(Cursor cur) {
 			return toJSONObject(cur, false);
 		}
 
 		public static JSONObject toJSONObject(Cursor cur, boolean extended) {
-			int deleted = cur.getInt(cur.getColumnIndex(Apps.DELETED));
+			boolean deleted = (cur.getInt(cur.getColumnIndex(Apps.STATUS)) == STATUS_ENUM.DELETED
+					.ordinal());
 
 			// Skip deleted entries for non-sync use
-			if (!extended && deleted != 1) {
+			if (!extended && deleted) {
+				Log.d(TAG, "toJSONObject skipped entry");
 				return null;
 			}
-			
+
 			String manifest = cur.getString(cur.getColumnIndex(Apps.MANIFEST));
-			
+
 			JSONObject app = new JSONObject();
 
 			try {
@@ -139,12 +155,12 @@ public final class AppsContract {
 						cur.getString(cur.getColumnIndex(Apps.INSTALL_DATA)));
 				app.put("install_origin",
 						cur.getString(cur.getColumnIndex(Apps.INSTALL_ORIGIN)));
-				app.put("install_time",
-						cur.getFloat(cur.getColumnIndex(Apps.INSTALL_TIME)));
+				app.put("install_time", Long.valueOf(cur.getLong(cur
+						.getColumnIndex(Apps.INSTALL_TIME)) / 1000));
 
 				if (extended) {
-					app.put("last_modified",
-							cur.getLong(cur.getColumnIndex(Apps.MODIFIED_DATE)));
+					app.put("last_modified", Long.valueOf(cur.getLong(cur
+							.getColumnIndex(Apps.MODIFIED_DATE)) / 1000));
 					app.put("deleted", deleted);
 				}
 			} catch (JSONException e) {
@@ -154,5 +170,87 @@ public final class AppsContract {
 			return app;
 		}
 
+		public static ContentValues toContentValues(final JSONObject app) {
+
+			String origin = app.optString("origin");
+			JSONObject manifest = app.optJSONObject("manifest");
+
+			if (manifest == null || origin == null) {
+				return null;
+			}
+
+			ContentValues values = new ContentValues();
+
+			values.put(Apps.NAME, manifest.optString("name"));
+			values.put(Apps.DESCRIPTION, manifest.optString("description"));
+
+			Bitmap icon = null;
+			JSONObject icons = manifest.optJSONObject("icons");
+
+			if (icons != null && icons.length() > 0) {
+				JSONArray sizes = icons.names();
+
+				List<Integer> sizesSort = new ArrayList<Integer>();
+				for (int i = 0, l = sizes.length(); i < l; i++) {
+					sizesSort.add(sizes.optInt(i));
+				}
+				String max = Collections.max(sizesSort).toString();
+
+				String iconUrl = origin + icons.optString(max);
+				icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
+			}
+
+			if (icon != null) {
+				values.put(Apps.ICON, ImageFactory.bitmapToBytes(icon));
+			} else {
+				Log.w(TAG, "Could not load icon from " + icons);
+			}
+
+			values.put(Apps.ORIGIN, origin);
+			values.put(Apps.MANIFEST_URL, app.optString("manifest_url"));
+			values.put(Apps.MANIFEST, manifest.toString());
+
+			long installTime = app.optLong("install_time");
+			if (installTime > 0) {
+				installTime = Long.valueOf(System.currentTimeMillis() / 1000);
+			}
+			values.put(Apps.INSTALL_TIME, installTime * 1000);
+
+			JSONObject installData = null;
+
+			if (app.optBoolean("deleted")) {
+				values.put(Apps.STATUS, STATUS_ENUM.DELETED.ordinal());
+			} else {
+				values.put(Apps.STATUS, STATUS_ENUM.OK.ordinal());
+			}
+
+			try {
+				installData = new JSONObject(app.optString("install_data"));
+			} catch (Exception e) {
+			}
+
+			if (installData != null) {
+				values.put(Apps.INSTALL_DATA, installData.toString());
+				if (installData.has("receipt")) {
+					values.put(Apps.INSTALL_RECEIPT, installData.optString("receipt"));
+				}
+			}
+
+			return values;
+		}
+
+		public static Cursor findAppByOrigin(Context ctx, String origin) {
+			Cursor cur = ctx.getContentResolver().query(Apps.CONTENT_URI,
+					Apps.APP_PROJECTION, Apps.ORIGIN + " = ?", new String[] { origin },
+					Apps.DEFAULT_SORT_ORDER);
+
+			if (cur.moveToFirst() == false) {
+				return null;
+			}
+
+			return cur;
+		}
+
 	}
+
 }

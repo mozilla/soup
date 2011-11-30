@@ -1,16 +1,18 @@
 package org.mozilla.labs.Soup.plugins;
 
+import java.util.HashMap;
+import java.util.Observable;
+import java.util.Observer;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.app.AppActivity;
+import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
-import android.content.ContentResolver;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.database.Cursor;
-import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -18,13 +20,14 @@ import com.phonegap.api.Plugin;
 import com.phonegap.api.PluginResult;
 import com.phonegap.api.PluginResult.Status;
 
-public class MozAppsMgmtPlugin extends Plugin {
+public class MozAppsMgmtPlugin extends Plugin implements Observer {
 
 	private static final String TAG = "MozAppsMgmtPlugin";
 
-	public static final String ACTION_LIST = "list";
+	private HashMap<Long, String> watchList = new HashMap<Long, String>();
 
-	public static final String ACTION_LAUNCH = "launch";
+	private boolean watchAdded = false;
+	private long watchUid = 1;
 
 	/*
 	 * (non-Javadoc)
@@ -32,58 +35,71 @@ public class MozAppsMgmtPlugin extends Plugin {
 	 * @see com.phonegap.api.Plugin#execute(java.lang.String, org.json.JSONArray, java.lang.String)
 	 */
 	@Override
-	public PluginResult execute(String action, JSONArray data, String callback) {
+	public PluginResult execute(String action, JSONArray data, String callbackId) {
 		Log.d(TAG, "Called with " + action);
 
-		PluginResult result = null;
+		try {
 
-		if (ACTION_LIST.equals(action)) {
+			if (action.equals("list")) {
 
-			try {
-				result = list();
-				
-			} catch (Exception e) {
-				Log.w(TAG, action + " failed", e);
-				result = new PluginResult(Status.JSON_EXCEPTION);
+				return list(false);
+
+			} else if (action.equals("launch")) {
+
+				return launch(data.optString(0));
+
+			} else if (action.equals("watchUpdates")) {
+
+				return watchUpdates(callbackId);
+
+			} else if (action.equals("clearWatch")) {
+
+				return clearWatch(callbackId, data.optLong(0));
+
 			}
 
-		} else if (ACTION_LAUNCH.equals(action)) {
+		} catch (Exception e) {
+			Log.w(TAG, action + " failed", e);
 
-			try {
-				result = launch(data.optString(0));
-
-			} catch (Exception e) {
-				Log.w(TAG, action + " failed", e);
-				result = new PluginResult(Status.JSON_EXCEPTION);
-			}
-		} else {
-			result = new PluginResult(Status.INVALID_ACTION);
+			return new PluginResult(Status.JSON_EXCEPTION);
 		}
 
-		Log.d(TAG, "Returns " + result.getJSONString());
+		return new PluginResult(Status.INVALID_ACTION);
+	}
 
-		return result;
+	/**
+	 * Identifies if action to be executed returns a value and should be run synchronously.
+	 * 
+	 * @param action
+	 *          The action to execute
+	 * @return T=returns value
+	 */
+	public boolean isSynch(String action) {
+		if (action.equals("watchUpdates")) {
+			return true;
+		}
+		
+		return false;
 	}
 
 	private PluginResult launch(String query) {
 
 		String[] projection = new String[] { Apps.ORIGIN, Apps.MANIFEST,
 				Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN, Apps.INSTALL_TIME };
-		
+
 		Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, projection, Apps.ORIGIN
-				+ " = ?", new String[] { query },
-				Apps.DEFAULT_SORT_ORDER);
+				+ " = ?", new String[] { query }, Apps.DEFAULT_SORT_ORDER);
 
 		if (cur.moveToFirst() == false) {
 			Log.w(TAG, "Could not find " + query);
 
 			return new PluginResult(Status.ERROR);
 		}
-			
+
 		JSONObject manifest;
 		try {
-			manifest = new JSONObject(cur.getString(cur
-					.getColumnIndex(Apps.MANIFEST)));
+			manifest = new JSONObject(
+					cur.getString(cur.getColumnIndex(Apps.MANIFEST)));
 		} catch (JSONException e) {
 			return new PluginResult(Status.ERROR);
 		}
@@ -99,8 +115,7 @@ public class MozAppsMgmtPlugin extends Plugin {
 
 		ctx.runOnUiThread(new Runnable() {
 			public void run() {
-				Toast.makeText(ctx, "Launching " + name, Toast.LENGTH_SHORT)
-						.show();
+				Toast.makeText(ctx, "Launching " + name, Toast.LENGTH_SHORT).show();
 
 				ctx.startActivity(shortcutIntent);
 			}
@@ -109,11 +124,11 @@ public class MozAppsMgmtPlugin extends Plugin {
 		return new PluginResult(Status.OK);
 	}
 
-	private PluginResult list() {
+	private PluginResult list(boolean update) {
 		// TODO: Wait for sync
-		
-		Cursor cur = ctx.managedQuery(Apps.CONTENT_URI, Apps.APP_PROJECTION, null,
-				null, Apps.DEFAULT_SORT_ORDER);
+
+		Cursor cur = ctx.getContentResolver().query(Apps.CONTENT_URI,
+				Apps.APP_PROJECTION, null, null, Apps.DEFAULT_SORT_ORDER);
 
 		cur.moveToFirst();
 
@@ -129,36 +144,51 @@ public class MozAppsMgmtPlugin extends Plugin {
 			cur.moveToNext();
 		}
 
-		return new PluginResult(Status.OK, list);
+		cur.close();
+
+		if (update) {
+			for (HashMap.Entry<Long, String> entry : watchList.entrySet()) {
+				success(new PluginResult(Status.OK, list), entry.getValue());
+			}
+			return new PluginResult(Status.NO_RESULT);
+		} else {
+			// TODO: Better place to trigger updates
+			((SoupApplication) ctx.getApplication()).triggerSync();
+			
+			return new PluginResult(Status.OK, list);
+		}
 	}
-	
-	/**
-	 * ContentObserver for Apps
-	 */
-  public class AppsObserver extends ContentObserver {
-  	 
-    public AppsObserver(Handler handler) {
-        super(handler);
-    }
 
-    @Override
-    public boolean deliverSelfNotifications() {
-        return super.deliverSelfNotifications();
-    }
+	private PluginResult watchUpdates(String callbackId) {
 
-    @Override
-    public void onChange(boolean selfChange) {
-        super.onChange(selfChange);
+		if (!watchAdded) {
+			watchAdded = true;
+			((SoupApplication) ctx.getApplication()).syncManager.addObserver(this);
+		}
 
-        // Send the on change message to your database manager.
-        watch();
-    }
-}
-	
-	private void watch() {
-		AppsObserver observer = new AppsObserver(new Handler());
-		 
-		ContentResolver resolver = ctx.getContentResolver();
-		resolver.registerContentObserver(Apps.CONTENT_URI, true, observer);
+		long watchId = watchUid++;
+
+		watchList.put(watchId, callbackId);
+
+		PluginResult result = new PluginResult(Status.NO_RESULT, watchId);
+		result.setKeepCallback(true);
+		return result;
 	}
+
+	private PluginResult clearWatch(String callbackId, long watchId) {
+		if (watchList.containsKey(watchId)) {
+			watchList.remove(watchId);
+		}
+
+		return new PluginResult(Status.NO_RESULT);
+	}
+
+	public void update(Observable app, Object updated) {
+		Integer updatedInt = (Integer) updated;
+		if (updatedInt > 1) {
+			list(true);
+		}
+		
+	}
+
 }

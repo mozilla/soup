@@ -1,8 +1,10 @@
 package org.mozilla.labs.Soup.plugins;
 
 import java.net.URI;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.service.SoupClient;
 
 import android.content.SharedPreferences;
@@ -160,7 +162,9 @@ public class MozIdPlugin extends Plugin {
 			prefs.edit().putString("assertions", assertions.toString())
 					.putString("email", verifiedEmail).commit();
 		}
-
+		
+		((SoupApplication) ctx.getApplication()).triggerSync();
+		
 		return new PluginResult(Status.ERROR, assertion);
 	}
 

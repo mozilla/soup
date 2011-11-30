@@ -22,6 +22,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.HttpEntityWrapper;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
@@ -30,6 +31,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
@@ -59,8 +61,7 @@ public class SoupClient {
 	private static JSONObject authorization;
 
 	/**
-	 * Execute a {@link HttpGet} request, passing a valid response through
-	 * {@link XmlHandler#parseAndApply(XmlPullParser, ContentResolver)}.
+	 * Execute a {@link HttpGet} request.
 	 */
 	private static JSONObject executeGet(Context ctx, String url,
 			String authorization) throws Exception {
@@ -74,18 +75,45 @@ public class SoupClient {
 	}
 
 	/**
-	 * Execute a {@link HttpGet} request, passing a valid response through
-	 * {@link XmlHandler#parseAndApply(XmlPullParser, ContentResolver)}.
+	 * Execute a {@link HttpPost} request
 	 * 
-	 * @return
+	 * @return JSONObject
 	 */
 	private static JSONObject executePost(Context ctx, final String url,
-			final List<NameValuePair> params) throws Exception {
+			final List<NameValuePair> params, String authorization) throws Exception {
 		final HttpPost request = new HttpPost(url);
+
+		if (authorization != null) {
+			request.setHeader("Authorization", authorization);
+		}
 
 		if (params != null) {
 			try {
 				request.setEntity(new UrlEncodedFormEntity(params));
+			} catch (UnsupportedEncodingException e) {
+				Log.w(TAG, "Could not encode entity", e);
+			}
+		}
+
+		return execute(ctx, request);
+	}
+
+	/**
+	 * Execute a {@link HttpPost} request
+	 * 
+	 * @return JSONObject
+	 */
+	private static JSONObject executePost(Context ctx, final String url,
+			final String payload, String authorization) throws Exception {
+		final HttpPost request = new HttpPost(url);
+
+		if (authorization != null) {
+			request.setHeader("Authorization", authorization);
+		}
+
+		if (payload != null) {
+			try {
+				request.setEntity(new StringEntity(payload));
 			} catch (UnsupportedEncodingException e) {
 				Log.w(TAG, "Could not encode entity", e);
 			}
@@ -100,20 +128,25 @@ public class SoupClient {
 	 */
 	private static JSONObject execute(Context ctx, HttpUriRequest request)
 			throws Exception {
+
+		String ident = request.getRequestLine().toString();
+
 		try {
 			final HttpResponse resp = getHttpClient(ctx).execute(request);
 
 			final int status = resp.getStatusLine().getStatusCode();
 			if (status != HttpStatus.SC_OK) {
 				throw new Exception("Unexpected server response "
-						+ resp.getStatusLine() + " for " + request.getRequestLine());
+						+ resp.getStatusLine() + " for " + ident);
 			}
 
+			String body = EntityUtils.toString(resp.getEntity());
+
 			try {
-				return new JSONObject(EntityUtils.toString(resp.getEntity()));
+				// TODO: Make thread-safe (as it is used in a service)
+				return new JSONObject(body);
 			} catch (Exception e) {
-				throw new Exception("Malformed response for "
-						+ request.getRequestLine(), e);
+				throw new Exception("Malformed response for " + ident, e);
 			}
 		} catch (Exception e) {
 			throw e;
@@ -208,7 +241,7 @@ public class SoupClient {
 		}
 	}
 
-	private static boolean authorize(Context ctx) {
+	public static boolean authorize(Context ctx) {
 
 		if (authorization != null) {
 			return true;
@@ -247,7 +280,7 @@ public class SoupClient {
 
 		JSONObject response = null;
 		try {
-			response = executePost(ctx, url, params);
+			response = executePost(ctx, url, params, null);
 		} catch (Exception e) {
 			Log.w(TAG, "Could not execute request", e);
 			return false;
@@ -263,13 +296,13 @@ public class SoupClient {
 		return true;
 	}
 
-	public static JSONObject getAllApps(Context ctx, int localSince) {
+	public static JSONObject getAllApps(Context ctx, long localSince) {
 		if (!authorize(ctx)) {
 			return null;
 		}
 
-		Uri.Builder builder = Uri.parse(
-				authorization.optString("collection_url")).buildUpon();
+		Uri.Builder builder = Uri.parse(authorization.optString("collection_url"))
+				.buildUpon();
 		builder.appendQueryParameter("since", String.valueOf(localSince));
 		String url = builder.build().toString();
 
@@ -282,39 +315,66 @@ public class SoupClient {
 			return null;
 		}
 	}
-	
+
+	public static long updateApps(Context ctx, JSONArray collection,
+			long since) {
+		if (!authorize(ctx)) {
+			return 0;
+		}
+		
+		Uri.Builder builder = Uri.parse(authorization.optString("collection_url"))
+				.buildUpon();
+//		builder.appendQueryParameter("lastget", String.valueOf(since));
+		String url = builder.build().toString();
+
+		JSONObject response = null;
+		try {
+			response = executePost(ctx, url, collection.toString(),
+					authorization.optString("http_authorization"));
+		} catch (Exception e) {
+			Log.w(TAG, "updateApps failed for " + url, e);
+		}
+		
+		Log.d(TAG, "updateApps returned " + response);
+
+		if (response == null || !response.has("received")) {
+			return 0;
+		}
+
+		return response.optLong("received");
+	}
+
 	public static String verifyId(Context ctx, String assertion, String audience) {
 
-		
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(ctx);
-		Uri.Builder builder = Uri.parse(prefs.getString("dev_identity",
-				"https://browserid.org")).buildUpon();
+		Uri.Builder builder = Uri.parse(
+				prefs.getString("dev_identity", "https://browserid.org")).buildUpon();
 		builder.path("/verify");
-		
+
 		String url = builder.build().toString();
-		
+
 		Log.d(TAG, "verifyId for " + audience + " from " + url + ": " + assertion);
 
 		List<NameValuePair> params = new ArrayList<NameValuePair>(2);
 		params.add(new BasicNameValuePair("audience", audience));
 		params.add(new BasicNameValuePair("assertion", assertion));
-		
+
 		JSONObject response;
 		try {
-			response = executePost(ctx, url, params);
+			response = executePost(ctx, url, params, null);
 		} catch (Exception e) {
 			Log.w(TAG, "verifyId failed", e);
 			return null;
 		}
-		
+
 		String email = response.optString("email");
-		
+
 		if (TextUtils.isEmpty(email)) {
 			Log.w(TAG, "verifyId response had no email " + response);
 			return null;
 		}
-		
+
 		Log.w(TAG, "verifyId returned email " + email);
 
 		return email;

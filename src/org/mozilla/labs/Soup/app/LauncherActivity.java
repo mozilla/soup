@@ -16,7 +16,8 @@ public class LauncherActivity extends SoupActivity {
 		final String action = intent.getAction();
 
 		if (Intent.ACTION_CREATE_SHORTCUT.equals(action)) {
-			Toast.makeText(LauncherActivity.this, "TODO: Prompt for app shortcut", Toast.LENGTH_SHORT).show();
+			Toast.makeText(LauncherActivity.this, "TODO: Prompt for app shortcut",
+					Toast.LENGTH_SHORT).show();
 			finish();
 			return;
 		}
@@ -24,8 +25,6 @@ public class LauncherActivity extends SoupActivity {
 		// Init web views
 
 		if (onCreateLayout()) {
-			
-			sync();
 
 			// only set URL for fresh views
 
@@ -33,5 +32,5 @@ public class LauncherActivity extends SoupActivity {
 		}
 
 	}
-	
+
 }

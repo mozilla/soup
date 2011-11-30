@@ -59,6 +59,16 @@ public class AppsProvider extends ContentProvider {
 	private static final int APPS = 1;
 	private static final int APP_ID = 2;
 	private static final int LIVE_FOLDER_APPS = 3;
+	
+	private static final String SQL_CREATE = "CREATE TABLE " + APPS_TABLE_NAME + " (" + Apps._ID
+			+ " INTEGER PRIMARY KEY," + Apps.ORIGIN + " TEXT," + Apps.NAME
+			+ " TEXT," + Apps.DESCRIPTION + " TEXT," + Apps.ICON + " TEXT,"
+			+ Apps.MANIFEST + " BLOB," + Apps.MANIFEST_URL + " TEXT,"
+			+ Apps.INSTALL_DATA + " BLOB," + Apps.INSTALL_RECEIPT + " BLOB,"
+			+ Apps.INSTALL_ORIGIN + " TEXT," + Apps.INSTALL_TIME + " INTEGER,"
+			+ Apps.VERIFIED_DATE + " INTEGER," + Apps.SYNCED_DATE + " INTEGER,"
+			+ Apps.STATUS + " INTEGER," + Apps.CREATED_DATE + " INTEGER,"
+			+ Apps.MODIFIED_DATE + " INTEGER" + ");";
 
 	private static final UriMatcher sUriMatcher;
 
@@ -73,17 +83,9 @@ public class AppsProvider extends ContentProvider {
 
 		@Override
 		public void onCreate(SQLiteDatabase db) {
-			Log.d(TAG + ".DatabaseHelper", "onCreate");
+			Log.d(TAG + ".DatabaseHelper", "onCreate: " + SQL_CREATE);
 
-			db.execSQL("CREATE TABLE " + APPS_TABLE_NAME + " (" + Apps._ID
-					+ " INTEGER PRIMARY KEY," + Apps.ORIGIN + " TEXT," + Apps.NAME
-					+ " TEXT," + Apps.DESCRIPTION + " TEXT," + Apps.ICON + " TEXT,"
-					+ Apps.MANIFEST + " BLOB," + Apps.MANIFEST_URL + " TEXT,"
-					+ Apps.INSTALL_DATA + " BLOB," + Apps.INSTALL_RECEIPT + " BLOB,"
-					+ Apps.INSTALL_ORIGIN + " TEXT," + Apps.INSTALL_TIME + " INTEGER,"
-					+ Apps.VERIFIED_DATE + " INTEGER," + Apps.UPDATED_DATE + " INTEGER,"
-					+ Apps.DELETED + " INTEGER," + Apps.CREATED_DATE + " INTEGER,"
-					+ Apps.MODIFIED_DATE + " INTEGER" + ");");
+			db.execSQL(SQL_CREATE);
 
 			// FIXME: ONLY development
 
@@ -137,11 +139,14 @@ public class AppsProvider extends ContentProvider {
 				if (values.containsKey(AppsContract.Apps.INSTALL_TIME) == false) {
 					values.put(AppsContract.Apps.INSTALL_TIME, now);
 				}
-				if (values.containsKey(AppsContract.Apps.UPDATED_DATE) == false) {
-					values.put(AppsContract.Apps.UPDATED_DATE, now);
+				if (values.containsKey(AppsContract.Apps.SYNCED_DATE) == false) {
+					values.put(AppsContract.Apps.SYNCED_DATE, now);
 				}
-				if (values.containsKey(AppsContract.Apps.DELETED) == false) {
-					values.put(AppsContract.Apps.UPDATED_DATE, 0);
+				if (values.containsKey(AppsContract.Apps.STATUS) == false) {
+					values.put(AppsContract.Apps.STATUS, 0);
+				}
+				if (values.containsKey(AppsContract.Apps.SYNCED_DATE) == false) {
+					values.put(AppsContract.Apps.SYNCED_DATE, 0);
 				}
 
 				if (values.containsKey(AppsContract.Apps.NAME) == false) {
@@ -298,11 +303,8 @@ public class AppsProvider extends ContentProvider {
 			values.put(AppsContract.Apps.INSTALL_DATA, new JSONObject().toString());
 		}
 		
-		if (values.containsKey(AppsContract.Apps.DELETED) == false) {
-			values.put(AppsContract.Apps.DELETED, 0);
-		}
-		if (values.containsKey(AppsContract.Apps.UPDATED_DATE) == false) {
-			values.put(AppsContract.Apps.UPDATED_DATE, 0);
+		if (values.containsKey(AppsContract.Apps.STATUS) == false) {
+			values.put(AppsContract.Apps.STATUS, 0);
 		}
 
 		// TODO Add other defaults
@@ -358,8 +360,8 @@ public class AppsProvider extends ContentProvider {
 		case APP_ID:
 			String appId = uri.getPathSegments().get(1);
 
-			values.put(AppsContract.Apps.MODIFIED_DATE,
-					Long.valueOf(System.currentTimeMillis()));
+//			values.put(AppsContract.Apps.MODIFIED_DATE,
+//					Long.valueOf(System.currentTimeMillis()));
 
 			count = db.update(APPS_TABLE_NAME, values, Apps._ID + "=" + appId
 					+ (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""),
@@ -391,6 +393,8 @@ public class AppsProvider extends ContentProvider {
 		sAppsProjectionMap.put(Apps.INSTALL_DATA, Apps.INSTALL_DATA);
 		sAppsProjectionMap.put(Apps.INSTALL_ORIGIN, Apps.INSTALL_ORIGIN);
 		sAppsProjectionMap.put(Apps.INSTALL_TIME, Apps.INSTALL_TIME);
+		sAppsProjectionMap.put(Apps.STATUS, Apps.STATUS);
+		sAppsProjectionMap.put(Apps.SYNCED_DATE, Apps.SYNCED_DATE);
 		sAppsProjectionMap.put(Apps.CREATED_DATE, Apps.CREATED_DATE);
 		sAppsProjectionMap.put(Apps.MODIFIED_DATE, Apps.MODIFIED_DATE);
 
