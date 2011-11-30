@@ -90,7 +90,7 @@ public class SoupApplication extends Application {
 					Toast.makeText(ctx, "Uploaded " + uploaded + " app(s)",
 							Toast.LENGTH_SHORT).show();
 				} else {
-					Toast.makeText(ctx, "Nothing to sync", Toast.LENGTH_SHORT).show();
+					// Toast.makeText(ctx, "Nothing to sync", Toast.LENGTH_SHORT).show();
 				}
 
 				setChanged();
