@@ -18,11 +18,7 @@ package org.mozilla.labs.Soup.provider;
 
 import java.util.HashMap;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import org.mozilla.labs.Soup.app.SoupActivity;
-import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 import android.content.ContentProvider;
@@ -36,7 +32,6 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.provider.LiveFolders;
 import android.text.TextUtils;
@@ -86,96 +81,6 @@ public class AppsProvider extends ContentProvider {
 			Log.d(TAG + ".DatabaseHelper", "onCreate: " + SQL_CREATE);
 
 			db.execSQL(SQL_CREATE);
-
-			// FIXME: ONLY development
-
-			generateData(db);
-		}
-
-		private void generateData(SQLiteDatabase db) {
-			JSONArray list = SoupActivity.findAll();
-
-			for (int i = 0, l = list.length(); i < l; i++) {
-				JSONObject app = list.optJSONObject(i);
-
-				String origin = app.optString("origin");
-				JSONObject manifest = app.optJSONObject("manifest");
-
-				ContentValues values = new ContentValues();
-				try {
-					values.put(Apps.NAME, manifest.getString("name"));
-					values.put(Apps.DESCRIPTION, manifest.getString("description"));
-
-					String iconUrl = origin
-							+ manifest.getJSONObject("icons").getString("128");
-					Bitmap bitmap = ImageFactory.getResizedImage(iconUrl, 72, 72);
-
-					if (bitmap != null) {
-						values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
-					} else {
-						Log.w(TAG + ".DatabaseHelper", "could not fetch icon");
-					}
-
-					values.put(Apps.ORIGIN, origin);
-					values.put(Apps.MANIFEST_URL, app.getString("manifest_url"));
-					values.put(Apps.MANIFEST, manifest.toString());
-
-					Log.d(TAG + ".DatabaseHelper", "generated " + values);
-
-				} catch (JSONException e) {
-					Log.d(TAG + ".DatabaseHelper", "loadValue", e);
-					continue;
-				}
-
-				Long now = Long.valueOf(System.currentTimeMillis());
-
-				// Make sure that the fields are all set
-				if (values.containsKey(AppsContract.Apps.CREATED_DATE) == false) {
-					values.put(AppsContract.Apps.CREATED_DATE, now);
-				}
-				if (values.containsKey(AppsContract.Apps.MODIFIED_DATE) == false) {
-					values.put(AppsContract.Apps.MODIFIED_DATE, now);
-				}
-				if (values.containsKey(AppsContract.Apps.INSTALL_TIME) == false) {
-					values.put(AppsContract.Apps.INSTALL_TIME, now);
-				}
-				if (values.containsKey(AppsContract.Apps.SYNCED_DATE) == false) {
-					values.put(AppsContract.Apps.SYNCED_DATE, now);
-				}
-				if (values.containsKey(AppsContract.Apps.STATUS) == false) {
-					values.put(AppsContract.Apps.STATUS, 0);
-				}
-				if (values.containsKey(AppsContract.Apps.SYNCED_DATE) == false) {
-					values.put(AppsContract.Apps.SYNCED_DATE, 0);
-				}
-
-				if (values.containsKey(AppsContract.Apps.NAME) == false) {
-					Resources r = Resources.getSystem();
-					values.put(AppsContract.Apps.NAME,
-							r.getString(android.R.string.untitled));
-				}
-				if (values.containsKey(AppsContract.Apps.DESCRIPTION) == false) {
-					values.put(AppsContract.Apps.DESCRIPTION, "");
-				}
-
-				if (values.containsKey(AppsContract.Apps.MANIFEST) == false) {
-					values.put(AppsContract.Apps.MANIFEST, new JSONObject().toString());
-				}
-				if (values.containsKey(AppsContract.Apps.MANIFEST_URL) == false) {
-					values.put(AppsContract.Apps.MANIFEST_URL, "");
-				}
-				if (values.containsKey(AppsContract.Apps.INSTALL_DATA) == false) {
-					values.put(AppsContract.Apps.INSTALL_DATA,
-							new JSONObject().toString());
-				}
-
-				long rowId = db.insert(APPS_TABLE_NAME, null, values);
-
-				if (rowId > 0) {
-					Log.d(TAG + ".loadValues", "Added " + rowId + " with " + values);
-				}
-
-			}
 		}
 
 		@Override

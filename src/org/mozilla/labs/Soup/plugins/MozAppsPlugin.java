@@ -12,6 +12,7 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
+import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
@@ -158,6 +159,8 @@ public class MozAppsPlugin extends Plugin {
 				values.put(Apps.INSTALL_RECEIPT, install_data.optString("receipt"));
 			}
 		}
+		
+		final String launchUri = origin + manifest.optString("launch_path", "");
 
 		ctx.runOnUiThread(new Runnable() {
 
@@ -210,8 +213,11 @@ public class MozAppsPlugin extends Plugin {
 
 								success(new PluginResult(Status.OK, 0), callbackId);
 
-								Intent shortcutIntent = new Intent(Intent.ACTION_VIEW, uri);
+								Intent shortcutIntent = new Intent(ctx, AppActivity.class);
+								shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
 								shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+								shortcutIntent.putExtra("uri", launchUri);
+								shortcutIntent.putExtra("app_uri", uri);
 
 								// TODO: Move one more place to sync
 								((SoupApplication) ctx.getApplication()).triggerSync();

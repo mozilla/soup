@@ -48,7 +48,6 @@ public abstract class SoupActivity extends DroidGap {
 			Gravity.CENTER_VERTICAL);
 
 	private SoupChromeClient appClient;
-	public ProgressDialog progress;
 
 	private View childContainer = null;
 	private WebView childView = null;
@@ -164,22 +163,6 @@ public abstract class SoupActivity extends DroidGap {
 			}
 
 			super.onPageStarted(view, url, favicon);
-
-			// try {
-			// progress.setTitle("Loading " + new URI(url).getAuthority());
-			// } catch (URISyntaxException e) {
-			//
-			// }
-			//
-			// if (favicon != null) {
-			// progress.setIcon(new BitmapDrawable(favicon));
-			// } else {
-			// progress.setIcon(null);
-			// }
-			//
-			// if (!progress.isShowing()) {
-			// progress.show();
-			// }
 		}
 
 		/*
@@ -197,8 +180,6 @@ public abstract class SoupActivity extends DroidGap {
 
 			// Sets title, handled by application container
 			SoupActivity.this.setTitle(view.getTitle());
-
-			// progress.dismiss();
 
 			super.onPageFinished(view, url);
 		}
@@ -342,9 +323,6 @@ public abstract class SoupActivity extends DroidGap {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		progress = new ProgressDialog(this);
-		progress.setIndeterminate(true);
-
 		// Resolve the intent (provided by child classes)
 		this.onResolveIntent();
 	}
@@ -379,12 +357,14 @@ public abstract class SoupActivity extends DroidGap {
 			return false;
 		}
 
-		super.setStringProperty("loadingDialog", "Loading App");
+    super.setBooleanProperty("keepRunning", false);
+    
+		// super.setStringProperty("loadingDialog", "Loading App");
 		// super.setStringProperty("loadingPageDialog", "Loading App");
 		// super.setStringProperty("errorUrl", "file:///android_asset/www/error.html");
 		// super.setIntegerProperty("splashscreen", R.drawable.splash);
 
-		super.init();
+		init();
 
 		// Set our own extended webkit client and clientview
 		appClient = new SoupChromeClient(SoupActivity.this);
@@ -397,6 +377,12 @@ public abstract class SoupActivity extends DroidGap {
 		settings.setSupportMultipleWindows(true);
 
 		return true;
+	}
+	
+	public void init() {
+		super.init();
+		
+		appView.setVisibility(View.VISIBLE);
 	}
 
 	/**
@@ -482,59 +468,6 @@ public abstract class SoupActivity extends DroidGap {
 
 		childContainer = null;
 		childView = null;
-	}
-
-	public static JSONArray findAll() {
-
-		JSONArray list = new JSONArray();
-
-		try {
-			// http://www.limejs.com/roundball.webapp
-			JSONObject app1 = new JSONObject();
-			app1.put("origin", "http://www.limejs.com");
-			app1.put("manifest_url", "http://www.limejs.com/roundball.webapp");
-			app1.put(
-					"manifest",
-					new JSONObject(
-							"{\"name\":\"Roundball\",\"description\":\"Roundball is a fun match three puzzle game where you form horizontal or vertical lines of at least three similar objects by swapping two adjacent items. The more matches you make, the higher your score. Two game modes: Classic and Timed mode. Works on regular computer or on touchscreens.\",\"launch_path\":\"/static/roundball/index.html\",\"developer\":{\"name\":\"Digital Fruit\",\"url\":\"http://www.limejs.com/\"},\"icons\":{\"128\":\"/static/roundball_icon_128.png\"},\"installs_allowed_from\":[\"*\"]}"));
-			list.put(app1);
-
-			// http://sinuousgame.com/manifest.webapp
-			// JSONObject app2 = new JSONObject();
-			// app2.put("origin", "http://sinuousgame.com");
-			// app2.put("manifest_url", "http://sinuousgame.com/manifest.webapp");
-			// app2.put(
-			// "manifest",
-			// new JSONObject(
-			// "{\"name\":\"Sinuous\",\"description\":\"Avoid the red dots in this fun and addictive game.\",\"launch_path\":\"/\",\"developer\":{\"name\":\"Hakim El Hattab\",\"url\":\"http://hakim.se/experiments/\"},\"icons\":{\"128\":\"/assets/images/icon_128.png\"},\"installs_allowed_from\":[\"*\"]}"));
-			// list.put(app2);
-			//
-			// // http://shazow.net
-			// // http://shazow.net/linerage/gameon/manifest.json
-			// JSONObject app3 = new JSONObject();
-			// app3.put("origin", "http://shazow.net");
-			// app3.put("manifest_url", "http://shazow.net/linerage/gameon/manifest.json");
-			// app3.put(
-			// "manifest",
-			// new JSONObject(
-			// "{\"name\":\"LineRage\",\"description\":\"You are a line. Don't hit things.\",\"launch_path\":\"/linerage/gameon/index.html\",\"developer\":{\"name\":\"Andrey Petrov\",\"url\":\"http://shazow.net\"},\"icons\":{\"16\":\"/linerage/gameon/icon_16.png\",\"32\":\"/linerage/gameon/icon_32.png\",\"128\":\"/linerage/gameon/icon_128.png\"},\"installs_allowed_from\":[\"*\"]}"));
-			// list.put(app3);
-			//
-			// // http://stillalivejs.t4ils.com
-			// // http://stillalivejs.t4ils.com/play/manifest.webapp
-			// JSONObject app4 = new JSONObject();
-			// app4.put("origin", "http://stillalivejs.t4ils.com");
-			// app4.put("manifest_url", "http://stillalivejs.t4ils.com/play/manifest.webapp");
-			// app4.put(
-			// "manifest",
-			// new JSONObject(
-			// "{\"name\":\"StillAliveJS\",\"description\":\"StillAliveJS, or SaJS, is a puzzle game inspired by Portal: The Flash Version which is a 2D renewal of Portal, developed by Valve Corporation.\n\nSaJS consists primarily in a series of platform puzzles that must be solved by teleporting the character and other simple objects using a Portal Gun. The unusual physics allowed by this device is the emphasis of StillAliveJS.\",\"launch_path\":\"/play/index.html\",\"developer\":{\"name\":\"t4ils and Zeblackos\",\"url\":\"http://stillalivejs.t4ils.com/\"},\"icons\":{\"128\":\"/play/images/icon128.png\"},\"installs_allowed_from\":[\"*\"]}"));
-			// list.put(app4);
-
-		} catch (JSONException e) {
-		}
-
-		return list;
 	}
 
 	protected abstract void onResolveIntent();
