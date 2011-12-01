@@ -3,15 +3,12 @@ package org.mozilla.labs.Soup.app;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Message;
@@ -26,6 +23,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
 import android.webkit.JsPromptResult;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
@@ -34,6 +32,9 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.phonegap.DroidGap;
 
@@ -49,8 +50,10 @@ public abstract class SoupActivity extends DroidGap {
 
 	private SoupChromeClient appClient;
 
-	private View childContainer = null;
+	private View childRoot = null;
 	private WebView childView = null;
+
+	private View titleView;
 
 	private class SoupChildViewClient extends WebViewClient {
 
@@ -74,6 +77,15 @@ public abstract class SoupActivity extends DroidGap {
 			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
 				injectJavaScript(childView, false);
 			}
+			
+			Uri uri = Uri.parse(url);
+			if (uri != null) {
+				SoupActivity.this.setTitle(uri.getHost());
+			}
+
+			ProgressBar progress = (ProgressBar) childRoot
+					.findViewById(R.id.title_progress_bar);
+			progress.setVisibility(View.VISIBLE);
 
 			super.onPageStarted(view, url, favicon);
 		}
@@ -100,6 +112,10 @@ public abstract class SoupActivity extends DroidGap {
 				injectJavaScript(childView, false);
 			}
 
+			ProgressBar progress = (ProgressBar) childRoot
+					.findViewById(R.id.title_progress_bar);
+			progress.setVisibility(View.GONE);
+			
 			super.onPageFinished(view, url);
 		}
 
@@ -117,6 +133,22 @@ public abstract class SoupActivity extends DroidGap {
 			closeChildView();
 		}
 
+		public void onReceivedTitle(WebView view, String title) {
+			super.onReceivedTitle(view, title);
+			
+			// Sets title, handled by application container
+			SoupActivity.this.setTitle(title);
+		}
+		
+		public void onReceivedIcon(WebView view, Bitmap icon) {
+			super.onReceivedIcon(view, icon);
+			
+			// Sets title, handled by application container
+			ImageView image = (ImageView) childRoot
+					.findViewById(R.id.title_image);
+			image.setImageBitmap(icon);
+		}
+		
 	}
 
 	/**
@@ -161,7 +193,18 @@ public abstract class SoupActivity extends DroidGap {
 				// TODO: Only inject phonegap for trusted views
 				injectJavaScript(appView, true);
 			}
-
+			
+			Uri uri = Uri.parse(url);
+			if (uri != null) {
+				SoupActivity.this.setTitle(uri.getHost());
+			}
+			
+			titleView.setVisibility(View.VISIBLE);
+			
+			ProgressBar progress = (ProgressBar) root
+					.findViewById(R.id.title_progress_bar);
+			progress.setVisibility(View.VISIBLE);
+			
 			super.onPageStarted(view, url, favicon);
 		}
 
@@ -178,8 +221,7 @@ public abstract class SoupActivity extends DroidGap {
 				injectJavaScript(appView, true);
 			}
 
-			// Sets title, handled by application container
-			SoupActivity.this.setTitle(view.getTitle());
+			titleView.setVisibility(View.GONE);
 
 			super.onPageFinished(view, url);
 		}
@@ -240,10 +282,12 @@ public abstract class SoupActivity extends DroidGap {
 
 			LayoutInflater inflater = LayoutInflater.from(SoupActivity.this);
 
-			childContainer = inflater.inflate(R.layout.popup, null);
-			childView = (WebView) childContainer.findViewById(R.id.webViewPopup);
-			ImageButton close = (ImageButton) childContainer
-					.findViewById(R.id.subwindow_close);
+			childRoot = inflater.inflate(R.layout.popup, null);
+			childView = (WebView) childRoot.findViewById(R.id.webViewPopup);
+
+			ImageButton close = (ImageButton) childRoot
+					.findViewById(R.id.title_close);
+			close.setVisibility(View.VISIBLE);
 			close.setOnClickListener(this);
 
 			childView.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
@@ -259,8 +303,11 @@ public abstract class SoupActivity extends DroidGap {
 			// settings.setSupportMultipleWindows(true);
 			settings.setJavaScriptCanOpenWindowsAutomatically(true);
 
-			ViewGroup content = (ViewGroup) getWindow().getDecorView();
-			content.addView(childContainer, COVER_SCREEN_PARAMS);
+			// ViewGroup content = (ViewGroup) getWindow().getDecorView();
+			appView.setVisibility(View.GONE);
+			titleView.setVisibility(View.GONE);
+			
+			root.addView(childRoot);
 
 			childView.setWebViewClient(new SoupChildViewClient());
 			childView.setWebChromeClient(new SoupChildChromeClient());
@@ -274,6 +321,22 @@ public abstract class SoupActivity extends DroidGap {
 			result.sendToTarget();
 
 			return true;
+		}
+		
+		public void onReceivedTitle(WebView view, String title) {
+			super.onReceivedTitle(view, title);
+			
+			// Sets title, handled by application container
+			SoupActivity.this.setTitle(title);
+		}
+		
+		public void onReceivedIcon(WebView view, Bitmap icon) {
+			super.onReceivedIcon(view, icon);
+			
+			// Sets title, handled by application container
+			ImageView image = (ImageView) root
+					.findViewById(R.id.title_image);
+			image.setImageBitmap(icon);
 		}
 	}
 
@@ -357,12 +420,7 @@ public abstract class SoupActivity extends DroidGap {
 			return false;
 		}
 
-    super.setBooleanProperty("keepRunning", false);
-    
-		// super.setStringProperty("loadingDialog", "Loading App");
-		// super.setStringProperty("loadingPageDialog", "Loading App");
-		// super.setStringProperty("errorUrl", "file:///android_asset/www/error.html");
-		// super.setIntegerProperty("splashscreen", R.drawable.splash);
+		super.setBooleanProperty("keepRunning", true);
 
 		init();
 
@@ -378,11 +436,32 @@ public abstract class SoupActivity extends DroidGap {
 
 		return true;
 	}
-	
+
 	public void init() {
 		super.init();
-		
+
 		appView.setVisibility(View.VISIBLE);
+
+		LayoutInflater inflater = LayoutInflater.from(SoupActivity.this);
+
+		titleView = inflater.inflate(R.layout.title, null);
+
+		root.removeView(appView);
+		root.addView(titleView);
+		root.addView(appView);
+	}
+	
+	public void setTitle(CharSequence title) {
+		super.setTitle(title);
+		
+		View parent = root;
+		if (childRoot != null) {
+			parent = childRoot;
+		}
+		
+		TextView text = (TextView) parent
+				.findViewById(android.R.id.title);
+		text.setText(title);
 	}
 
 	/**
@@ -402,13 +481,14 @@ public abstract class SoupActivity extends DroidGap {
 			return false;
 		}
 
+		// TODO: Close popup on back button
 		// If back key
-		// if (keyCode == KeyEvent.KEYCODE_BACK) {
-		// if (childView != null) {
-		// closeChildView();
-		// return false;
-		// }
-		// }
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			if (childView != null) {
+				closeChildView();
+				return false;
+			}
+		}
 
 		return super.onKeyDown(keyCode, event);
 	}
@@ -463,10 +543,14 @@ public abstract class SoupActivity extends DroidGap {
 
 		childView.destroy();
 
-		ViewGroup content = (ViewGroup) getWindow().getDecorView();
-		content.removeView(childContainer);
+		root.removeView(childRoot);
 
-		childContainer = null;
+		titleView.setVisibility(View.VISIBLE);
+		
+		appView.setVisibility(View.VISIBLE);
+		appView.requestFocus();
+
+		childRoot = null;
 		childView = null;
 	}
 

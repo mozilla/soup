@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.mozilla.labs.Soup.app.AppActivity;
+import org.mozilla.labs.Soup.app.LauncherActivity;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 import android.R;
@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.os.ResultReceiver;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 public class SyncService extends IntentService {
 
@@ -54,7 +55,7 @@ public class SyncService extends IntentService {
 		resolver = getContentResolver();
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 	}
-
+	
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		Log.d(TAG, "onHandleIntent " + intent);
@@ -243,8 +244,28 @@ public class SyncService extends IntentService {
 			
 			Log.d(TAG, "Sync until " + updatedUntil);
 
+			/**
+			 * Visual feedback
+			 */
+			
+			if (installed > 0) {
+				Toast.makeText(ctx, "Installed " + installed + " apps",
+						Toast.LENGTH_SHORT).show();
+			} else if (updated > 0) {
+				Toast.makeText(ctx, "Updated " + updated + " apps",
+						Toast.LENGTH_SHORT).show();
+			} else if (uploaded > 0) {
+				Toast.makeText(ctx, "Uploaded " + uploaded + " app(s)",
+						Toast.LENGTH_SHORT).show();
+			} else {
+				hideNotification();
+				// Toast.makeText(ctx, "Nothing to sync", Toast.LENGTH_SHORT).show();
+			}
+
 		} catch (Exception e) {
 			Log.e(TAG, "Sync unsuccessful", e);
+			
+			hideNotification();
 
 			if (receiver != null) {
 				// Pass back error to surface listener
@@ -253,8 +274,6 @@ public class SyncService extends IntentService {
 				receiver.send(STATUS_ERROR, bundle);
 			}
 		}
-
-		hideNotification();
 
 		// Announce success to any surface listener
 		if (receiver != null) {
@@ -279,11 +298,11 @@ public class SyncService extends IntentService {
 		
 		// Set the icon, scrolling text and timestamp
 		Notification notification = new Notification(R.drawable.stat_notify_sync,
-				"Soup is syncing", System.currentTimeMillis());
+				"Syncing Apps", System.currentTimeMillis());
 
 		// The PendingIntent to launch our activity if the user selects this notification
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-				new Intent(this, AppActivity.class), 0);
+				new Intent(this, LauncherActivity.class), 0);
 
 		// Set the info for the views that show in the notification panel.
 		notification
@@ -291,7 +310,7 @@ public class SyncService extends IntentService {
 
 		// Send the notification.
 		// We use a string id because it is a unique number. We use it later to cancel.
-		mNM.notify(NOTIFY_ID, notification);
+		mNM.notify(TAG, NOTIFY_ID, notification);
 	}
 
 	private void hideNotification() {
@@ -299,7 +318,7 @@ public class SyncService extends IntentService {
 			return;
 		}
 		
-		mNM.cancel(NOTIFY_ID);
+		mNM.cancel(TAG, NOTIFY_ID);
 	}
 
 }

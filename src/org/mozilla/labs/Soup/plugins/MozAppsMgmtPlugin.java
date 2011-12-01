@@ -36,7 +36,7 @@ public class MozAppsMgmtPlugin extends Plugin implements Observer {
 	 */
 	@Override
 	public PluginResult execute(String action, JSONArray data, String callbackId) {
-		Log.d(TAG, "Called with " + action);
+		Log.d(TAG, "Called " + action + ": " + data);
 
 		try {
 

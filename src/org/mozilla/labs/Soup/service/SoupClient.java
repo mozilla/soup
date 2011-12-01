@@ -346,6 +346,11 @@ public class SoupClient {
 
 	public static String verifyId(Context ctx, String assertion, String audience) {
 
+		if (TextUtils.isEmpty(assertion) || TextUtils.isEmpty(audience)) {
+			Log.d(TAG, "verifyId missing audience: " + audience + " or assertion: " + assertion);
+			return null;
+		}
+		
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(ctx);
 		Uri.Builder builder = Uri.parse(

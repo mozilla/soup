@@ -1,52 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/subwindow_container"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="0dip" >
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/inner_container"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_weight="1"
+    android:orientation="vertical" >
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingBottom="5dip"
-        android:paddingLeft="0dip"
-        android:paddingRight="0dip"
-        android:paddingTop="5dip" >
+    <include
+        android:layout_width="fill_parent"
+        layout="@layout/title" />
 
-        <LinearLayout
-            android:id="@+id/inner_container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:drawable/alert_light_frame"
-            android:orientation="vertical" >
+    <WebView
+        android:id="@+id/webViewPopup"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:fadeScrollbars="true"
+        android:scrollbarStyle="outsideOverlay" />
 
-            <WebView
-                android:id="@+id/webViewPopup"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:fadeScrollbars="true"
-                android:padding="0dip"
-                android:scrollbarStyle="outsideOverlay" />
-        </LinearLayout>
-    </FrameLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right"
-        android:gravity="right"
-        android:orientation="vertical" >
-
-        <ImageButton
-            android:id="@+id/subwindow_close"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:focusable="true"
-            android:paddingTop="20dip"
-            android:paddingRight="20dip"
-            android:src="@android:drawable/btn_dialog" />
-    </LinearLayout>
-
-</RelativeLayout>
+</LinearLayout>

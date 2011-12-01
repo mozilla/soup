@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.Toast;
 
 public class SoupApplication extends Application {
 
@@ -26,31 +25,35 @@ public class SoupApplication extends Application {
 
 		/*
 		 * This populates the default values from the preferences XML file.
-		 * 
-		 * TODO: Actually set defaults in preferences.xml
 		 */
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-		syncManager = new SyncManager(this);
+		syncManager = new SyncManager();
 	}
 
 	@Override
 	public void onTerminate() {
+		syncManager.terminate();
 	}
 
 	public class SyncManager extends Observable implements
 			DetachableResultReceiver.Receiver {
 
-		private Application ctx;
-
 		private DetachableResultReceiver receiver;
 		private boolean syncRunning;
 
-		public SyncManager(Application context) {
-			ctx = context;
-
+		public SyncManager() {
 			receiver = new DetachableResultReceiver(new Handler());
 			receiver.setReceiver(this);
+		}
+
+		public void terminate() {
+			if (syncRunning) {
+				final Intent intent = new Intent(SoupApplication.this,
+						SyncService.class);
+				stopService(intent);
+			}
+
 		}
 
 		public void startSync() {
@@ -62,13 +65,16 @@ public class SoupApplication extends Application {
 			setChanged();
 			notifyObservers(0);
 
-			final Intent intent = new Intent(Intent.ACTION_SYNC, null, ctx,
+			final Intent intent = new Intent(SoupApplication.this,
 					SyncService.class);
 			intent.putExtra(SyncService.EXTRA_STATUS_RECEIVER, receiver);
 			startService(intent);
 		}
 
 		public void onReceiveResult(int resultCode, Bundle resultData) {
+			// TODO: Review IBinder onBind so every activity can bind the service?
+			// @see RemoteService.java from android-8
+
 			switch (resultCode) {
 			case SyncService.STATUS_RUNNING:
 				// show progress
@@ -78,27 +84,10 @@ public class SoupApplication extends Application {
 
 				int installed = resultData.getInt(SyncService.EXTRA_STATUS_INSTALLED);
 				int updated = resultData.getInt(SyncService.EXTRA_STATUS_UPDATED);
-				int uploaded = resultData.getInt(SyncService.EXTRA_STATUS_UPLOADED);
-
-				if (installed > 0) {
-					Toast.makeText(ctx, "Installed " + installed + " apps",
-							Toast.LENGTH_SHORT).show();
-				} else if (updated > 0) {
-					Toast.makeText(ctx, "Updated " + updated + " apps",
-							Toast.LENGTH_SHORT).show();
-				} else if (uploaded > 0) {
-					Toast.makeText(ctx, "Uploaded " + uploaded + " app(s)",
-							Toast.LENGTH_SHORT).show();
-				} else {
-					// Toast.makeText(ctx, "Nothing to sync", Toast.LENGTH_SHORT).show();
-				}
 
 				setChanged();
 				notifyObservers(installed + updated);
-
-				// List results = resultData.getParcelableList("results");
-				// do something interesting
-				// hide progress
+				
 				break;
 			case SyncService.STATUS_ERROR:
 
