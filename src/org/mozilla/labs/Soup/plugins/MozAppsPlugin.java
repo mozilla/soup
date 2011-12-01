@@ -4,11 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
@@ -16,6 +11,7 @@ import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
+import org.mozilla.labs.Soup.service.SoupClient;
 
 import android.app.AlertDialog;
 import android.content.ContentValues;
@@ -108,14 +104,14 @@ public class MozAppsPlugin extends Plugin {
 	public PluginResult install(final String callbackId,
 			final String manifestUri, final JSONObject install_data,
 			final String origin) throws Exception {
-		HttpClient client = new DefaultHttpClient();
-		HttpGet get = new HttpGet(manifestUri);
-		HttpResponse responseGet = client.execute(get);
-		String manifestResponse = EntityUtils.toString(responseGet.getEntity());
 
-		JSONObject manifest = new JSONObject(manifestResponse);
-
+		JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
+		
 		Log.d(TAG, "Parsed manifest: " + manifest);
+		
+		if (manifest == null) {
+			return new PluginResult(Status.ERROR, 0);
+		}
 
 		final ContentValues values = new ContentValues();
 

@@ -385,4 +385,15 @@ public class SoupClient {
 		return email;
 	}
 
+
+	public static JSONObject getManifest(Context ctx, String manifestUri) {
+		
+		try {
+			return executeGet(ctx, manifestUri, null);
+		} catch (Exception e) {
+			Log.d(TAG, "getManifest failed " + e);
+			return null;
+		}
+	}
+
 }
