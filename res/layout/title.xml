@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@android:drawable/title_bar"
@@ -10,16 +10,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_marginRight="5sp"
+        android:layout_gravity="center_vertical"
         android:scaleType="centerInside" />
 
     <TextView
         android:id="@android:id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_marginRight="5sp"
-        android:layout_toRightOf="@+id/title_image"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="5sp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:scrollHorizontally="true"
         android:text="@string/app_name"
         android:textAppearance="@android:style/TextAppearance.WindowTitle" />
 
@@ -28,20 +31,20 @@
         style="?android:attr/progressBarStyleSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_toLeftOf="@+id/title_close"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="5sp"
         android:indeterminateOnly="true"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
     <ImageButton
         android:id="@+id/title_close"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"
+        android:layout_gravity="center_vertical"
         android:background="@android:color/transparent"
         android:focusable="true"
+        android:layout_marginLeft="5sp"
         android:src="@android:drawable/btn_dialog"
-        android:visibility="invisible" />
+        android:visibility="gone" />
 
-</RelativeLayout>
+</LinearLayout>

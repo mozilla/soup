@@ -2,22 +2,6 @@
 	
 	"use strict";
 	
-	// console.log('plugins.mozId ' + ((window.plugins && plugins.mozId) || 'No mozId'));
-	
-	// Fix post-load injected phonegap dependence on onDOMContentLoaded
-	if (document.readyState == 'complete' && window.PhoneGap && !PhoneGap.onDOMContentLoaded.fired) {
-		PhoneGap.onDOMContentLoaded.fire();
-	}
-
-	if (window._moz_soup) return;
-
-	// if (location == 'about:blank') {
-		// setTimeout(_moz_soup_init, 10);
-		// return;
-	// }
-	
-	window._moz_soup = true;
-	
 	var plugins = (window.plugins = window.plugins || {}), empty = function() {};
 	
 	// TODO: Implement promise to have all calls pending until phonegap plugins are ready
@@ -28,11 +12,26 @@
 
 	var id = (navigator.id = navigator.id || {});
 	
+	function phonegapGuard() {
+		// Fix post-load injected phonegap dependence on onDOMContentLoaded
+		console.log(document.readyState);
+		console.log('PhoneGap' in window);
+		console.log(PhoneGap.onDOMContentLoaded.fired || false);
+		console.log(PhoneGap.onNativeReady.fired || false);
+
+		if (document.readyState == 'complete' && window.PhoneGap && !PhoneGap.onDOMContentLoaded.fired) {
+			PhoneGap.onNativeReady.fire();
+			PhoneGap.onDOMContentLoaded.fire();
+		}
+	};
+	
 	(function bridgeId() {
 
 		var audience, origin, assertion, popup, timer;
 
 		id.getVerifiedEmail = function(callback) {
+			
+			phonegapGuard();
 			
 			plugins.mozId.preVerify(function(evt) {
 				audience = evt.audience;
