@@ -4,18 +4,10 @@ import java.net.URI;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.mozilla.labs.Soup.R;
-import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.app.SoupApplication;
-import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 import org.mozilla.labs.Soup.service.SoupClient;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.drawable.BitmapDrawable;
-import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -149,25 +141,10 @@ public class MozIdPlugin extends Plugin {
 				ctx.runOnUiThread(new Runnable() {
 
 					public void run() {
+						Toast.makeText(ctx, "Remember login for " + verifiedEmail,
+								Toast.LENGTH_LONG).show();
 
-						AlertDialog.Builder confirmDlg = new AlertDialog.Builder(ctx);
-
-						confirmDlg.setTitle("Remember " + verifiedEmail
-								+ " for all BrowserID logins?");
-
-						confirmDlg.setNegativeButton(android.R.string.cancel,
-								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog, int which) {
-									}
-								}).setPositiveButton(android.R.string.ok,
-								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog, int which) {
-										prefs.edit().putString("email", verifiedEmail).commit();
-									}
-								});
-
-						confirmDlg.create();
-						confirmDlg.show();
+						prefs.edit().putString("email", verifiedEmail).commit();
 					}
 				});
 			}

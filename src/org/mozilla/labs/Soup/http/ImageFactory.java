@@ -35,11 +35,15 @@ public class ImageFactory {
 	private static final String TAG = "ImageFactory";
 
 	public static Bitmap getResizedImage(String uri, int newHeight, int newWidth) {
-		Bitmap bitmap;
+		Bitmap bitmap = null;
 		try {
 			bitmap = BitmapFactory.decodeStream((InputStream) new URL(uri).getContent());
 		} catch (IOException e) {
-			Log.w(TAG, "BitmapFactory.decodeStream for " + uri, e);
+			Log.w(TAG, "BitmapFactory.decodeStream", e);
+		}
+		
+		if (bitmap == null) {
+			Log.w(TAG, "Invalid bitmap for " + uri);
 			return null;
 		}
 
