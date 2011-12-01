@@ -45,7 +45,7 @@ public class MozAppsPlugin extends Plugin {
 	 */
 	@Override
 	public PluginResult execute(String action, JSONArray data, String callback) {
-		Log.d(TAG, "Called with " + action);
+		Log.d(TAG, "Called " + action + ": " + data);
 
 		Uri originUri = Uri.parse(data.optString(0, webView.getUrl()));
 		String origin = originUri.getScheme() + "://" + originUri.getAuthority();

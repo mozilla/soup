@@ -33,7 +33,6 @@
 		var audience, origin, assertion, popup, timer;
 
 		id.getVerifiedEmail = function(callback) {
-			console.log("getVerifiedEmail");
 			
 			plugins.mozId.preVerify(function(evt) {
 				audience = evt.audience;
@@ -131,6 +130,8 @@
 				console.log("getVerifiedEmail received first postMessage with " + evt.data);
 				
 				var cb = function(assertion) {
+					console.log("getVerifiedEmail received callback with assertion: " + (assertion != null));
+					
 					if (!fired) opener.postMessage(assertion, origin);
 					fired = true;
 				};

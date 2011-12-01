@@ -38,7 +38,6 @@ import android.util.Log;
  */
 public final class AppsContract {
 
-	@SuppressWarnings("unused")
 	private static final String TAG = "AppsContract";
 
 	/**
