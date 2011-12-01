@@ -76,7 +76,7 @@ public abstract class SoupActivity extends DroidGap {
 			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
 				injectJavaScript(childView, false);
 			}
-			
+
 			Uri uri = Uri.parse(url);
 			if (uri != null) {
 				SoupActivity.this.setTitle(uri.getHost());
@@ -114,7 +114,7 @@ public abstract class SoupActivity extends DroidGap {
 			ProgressBar progress = (ProgressBar) childRoot
 					.findViewById(R.id.title_progress_bar);
 			progress.setVisibility(View.GONE);
-			
+
 			super.onPageFinished(view, url);
 		}
 
@@ -134,20 +134,32 @@ public abstract class SoupActivity extends DroidGap {
 
 		public void onReceivedTitle(WebView view, String title) {
 			super.onReceivedTitle(view, title);
-			
+
 			// Sets title, handled by application container
 			SoupActivity.this.setTitle(title);
 		}
-		
+
 		public void onReceivedIcon(WebView view, Bitmap icon) {
 			super.onReceivedIcon(view, icon);
-			
+
 			// Sets title, handled by application container
-			ImageView image = (ImageView) childRoot
-					.findViewById(R.id.title_image);
+			ImageView image = (ImageView) childRoot.findViewById(R.id.title_image);
 			image.setImageBitmap(icon);
 		}
 		
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see android.webkit.WebChromeClient#onCreateWindow(android.webkit.WebView, boolean, boolean, android.os.Message)
+		 */
+		@Override
+		public boolean onCreateWindow(WebView view, boolean modal, boolean user,
+				Message result) {
+			Log.w(TAG + ".SoupChildChromeClient", "SoupChildChromeClient");
+			
+			return false;
+		}
+
 	}
 
 	/**
@@ -192,18 +204,18 @@ public abstract class SoupActivity extends DroidGap {
 				// TODO: Only inject phonegap for trusted views
 				injectJavaScript(appView, true);
 			}
-			
+
 			Uri uri = Uri.parse(url);
 			if (uri != null) {
 				SoupActivity.this.setTitle(uri.getHost());
 			}
-			
+
 			titleView.setVisibility(View.VISIBLE);
-			
+
 			ProgressBar progress = (ProgressBar) root
 					.findViewById(R.id.title_progress_bar);
 			progress.setVisibility(View.VISIBLE);
-			
+
 			super.onPageStarted(view, url, favicon);
 		}
 
@@ -278,7 +290,7 @@ public abstract class SoupActivity extends DroidGap {
 		@Override
 		public boolean onCreateWindow(WebView view, boolean modal, boolean user,
 				Message result) {
-
+			
 			LayoutInflater inflater = LayoutInflater.from(SoupActivity.this);
 
 			childRoot = inflater.inflate(R.layout.popup, null);
@@ -305,7 +317,7 @@ public abstract class SoupActivity extends DroidGap {
 			// ViewGroup content = (ViewGroup) getWindow().getDecorView();
 			appView.setVisibility(View.GONE);
 			titleView.setVisibility(View.GONE);
-			
+
 			root.addView(childRoot);
 
 			childView.setWebViewClient(new SoupChildViewClient());
@@ -321,20 +333,19 @@ public abstract class SoupActivity extends DroidGap {
 
 			return true;
 		}
-		
+
 		public void onReceivedTitle(WebView view, String title) {
 			super.onReceivedTitle(view, title);
-			
+
 			// Sets title, handled by application container
 			SoupActivity.this.setTitle(title);
 		}
-		
+
 		public void onReceivedIcon(WebView view, Bitmap icon) {
 			super.onReceivedIcon(view, icon);
-			
+
 			// Sets title, handled by application container
-			ImageView image = (ImageView) root
-					.findViewById(R.id.title_image);
+			ImageView image = (ImageView) root.findViewById(R.id.title_image);
 			image.setImageBitmap(icon);
 		}
 	}
@@ -359,6 +370,11 @@ public abstract class SoupActivity extends DroidGap {
 
 		StringBuilder builder = new StringBuilder();
 
+		String iwashere = "$soup_was_here$";
+		builder.append(String.format(
+				"javascript:try { if (typeof %s != 'undefined') throw ''; %s = {}; ",
+				iwashere, iwashere));
+
 		for (String name : files) {
 			try {
 				InputStream is = getAssets().open("www/js/" + name);
@@ -374,10 +390,11 @@ public abstract class SoupActivity extends DroidGap {
 			}
 		}
 
+		builder.append("; } catch(e) { if (e.message) console.error(e); }");
+		
 		Log.d(TAG, "injectJavaScript: " + builder.length());
 
-		// TODO: Log errors?
-		view.loadUrl("javascript:" + builder.toString());
+		view.loadUrl(builder.toString());
 	}
 
 	/** Called when the activity is first created. */
@@ -450,17 +467,16 @@ public abstract class SoupActivity extends DroidGap {
 		root.addView(titleView);
 		root.addView(appView);
 	}
-	
+
 	public void setTitle(CharSequence title) {
 		super.setTitle(title);
-		
+
 		View parent = root;
 		if (childRoot != null) {
 			parent = childRoot;
 		}
-		
-		TextView text = (TextView) parent
-				.findViewById(android.R.id.title);
+
+		TextView text = (TextView) parent.findViewById(android.R.id.title);
 		text.setText(title);
 	}
 
@@ -510,6 +526,10 @@ public abstract class SoupActivity extends DroidGap {
 		// TODO: Hide login/logout based on status
 		menu.findItem(R.id.global_login).setVisible(false);
 		menu.findItem(R.id.global_logout).setVisible(false);
+		
+		// TODO: Show refresh/stop based on page status
+		menu.findItem(R.id.global_refresh).setVisible(true);
+		menu.findItem(R.id.global_stop).setVisible(false);
 
 		return super.onPrepareOptionsMenu(menu);
 
@@ -525,6 +545,15 @@ public abstract class SoupActivity extends DroidGap {
 		switch (item.getItemId()) {
 		case R.id.global_settings: {
 			startActivity(new Intent(this, SharedSettings.class));
+			return true;
+		}
+		case R.id.global_refresh: {
+			if (childView != null) {
+				childView.reload();
+			} else {
+				appView.reload();
+			}
+			
 			return true;
 		}
 		case R.id.global_login: {
@@ -546,9 +575,11 @@ public abstract class SoupActivity extends DroidGap {
 		root.removeView(childRoot);
 
 		titleView.setVisibility(View.VISIBLE);
-		
+
 		appView.setVisibility(View.VISIBLE);
-		appView.requestFocus();
+
+		appView.requestFocus(View.FOCUS_DOWN);
+		appView.requestFocusFromTouch();
 
 		childRoot = null;
 		childView = null;

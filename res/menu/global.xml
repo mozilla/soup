@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <item
-        android:id="@+id/global_settings"
-        android:icon="@android:drawable/ic_menu_preferences"
-        android:title="Settings"/>
-
-    <item
-        android:id="@+id/global_login"
-        android:icon="@android:drawable/ic_menu_close_clear_cancel"
-        android:title="Sign in"/>
-
-    <item
-        android:id="@+id/global_logout"
-        android:icon="@android:drawable/ic_menu_close_clear_cancel"
-        android:title="Logout"/>
-
+	<item
+	android:id="@+id/global_settings"
+	android:icon="@android:drawable/ic_menu_preferences"
+	android:title="Settings"/>
+	<item
+	android:id="@+id/global_stop"
+	android:icon="@android:drawable/ic_menu_close_clear_cancel"
+	android:title="Stop"/>
+	<item
+	android:id="@+id/global_refresh"
+	android:icon="@drawable/ic_menu_refresh"
+	android:title="Refresh"/>
+	<item
+	android:id="@+id/global_login"
+	android:icon="@drawable/ic_menu_login"
+	android:title="Sign in"/>
+	<item
+	android:id="@+id/global_logout"
+	android:icon="@android:drawable/ic_menu_close_clear_cancel"
+	android:title="Logout"/>
 </menu>
