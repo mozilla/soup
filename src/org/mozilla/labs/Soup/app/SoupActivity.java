@@ -155,9 +155,16 @@ public abstract class SoupActivity extends DroidGap {
 		@Override
 		public boolean onCreateWindow(WebView view, boolean modal, boolean user,
 				Message result) {
-			Log.w(TAG + ".SoupChildChromeClient", "SoupChildChromeClient");
+			Log.w(TAG + ".SoupChildChromeClient", "onCreateWindow");
 			
-			return false;
+			WebView.WebViewTransport transport = (WebView.WebViewTransport) result.obj;
+
+			closeChildView();
+			
+			transport.setWebView(appView);
+			result.sendToTarget();
+			
+			return true;
 		}
 
 	}
@@ -311,7 +318,7 @@ public abstract class SoupActivity extends DroidGap {
 			settings.setJavaScriptEnabled(true);
 			settings.setAllowFileAccess(true);
 
-			// settings.setSupportMultipleWindows(true);
+			settings.setSupportMultipleWindows(true);
 			settings.setJavaScriptCanOpenWindowsAutomatically(true);
 
 			// ViewGroup content = (ViewGroup) getWindow().getDecorView();
@@ -497,8 +504,7 @@ public abstract class SoupActivity extends DroidGap {
 			return false;
 		}
 
-		// TODO: Close popup on back button
-		// If back key
+		// If back key is pushed during popup time, we just close it
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
 			if (childView != null) {
 				closeChildView();

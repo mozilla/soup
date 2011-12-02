@@ -14,11 +14,6 @@
 	
 	function phonegapGuard() {
 		// Fix post-load injected phonegap dependence on onDOMContentLoaded
-		console.log(document.readyState);
-		console.log('PhoneGap' in window);
-		console.log(PhoneGap.onDOMContentLoaded.fired || false);
-		console.log(PhoneGap.onNativeReady.fired || false);
-
 		if (document.readyState == 'complete' && window.PhoneGap && !PhoneGap.onDOMContentLoaded.fired) {
 			PhoneGap.onNativeReady.fire();
 			PhoneGap.onDOMContentLoaded.fire();
@@ -170,54 +165,39 @@
 	(function bridgeApps() {
 
 		apps.install = function(url, install_data, onsuccess, onerror) {
-			if (!plugins.mozApps)
-				(onerror || empty)();
-			else
-				plugins.mozApps.install(url, install_data, onsuccess, onerror);
+			phonegapGuard();
+			plugins.mozApps.install(url, install_data, onsuccess, onerror);
 		};
 
 		apps.amInstalled = function(onsuccess, onerror) {
-			if (!plugins.mozApps)
-				(onerror || empty)();
-			else
-				plugins.mozApps.amInstalled(onsuccess, onerror);
+			phonegapGuard();
+			plugins.mozApps.amInstalled(onsuccess, onerror);
 		};
 
 		apps.enumerate = apps.getInstalledBy = function(onsuccess, onerror) {
-			if (!plugins.mozAppsMgmt)
-				(onsuccess || empty)([]);
-			else
-				plugins.mozAppsMgmt.list(onsuccess, onerror);
+			phonegapGuard();
+			plugins.mozAppsMgmt.list(onsuccess, onerror);
 		};
 
 		apps.mgmt = apps.mgmt || {};
 
 		apps.mgmt.list = function(onsuccess, onerror) {
-			console.log('apps.mgmt.list');
-			if (!plugins.mozAppsMgmt)
-				(onsuccess || empty)([]);
-			else
-				plugins.mozAppsMgmt.list(onsuccess, onerror);
+			phonegapGuard();
+			plugins.mozAppsMgmt.list(onsuccess, onerror);
 		};
 
 		apps.mgmt.launch = function(origin, onsuccess, onerror) {
-			if (!plugins.mozAppsMgmt)
-				(onerror || empty)();
-			else
-				plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
+			phonegapGuard();
+			plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
 		};
 
 		apps.mgmt.watchUpdates = function(onsuccess) {
-			if (!plugins.mozAppsMgmt)
-				return 0;
-				
+			phonegapGuard();	
 			return plugins.mozAppsMgmt.watchUpdates(onsuccess);
 		};
 		
 		apps.mgmt.clearWatch = function(id) {
-			if (!plugins.mozAppsMgmt)
-				return null;
-				
+			phonegapGuard();
 			return plugins.mozAppsMgmt.clearWatch(id);
 		};
 		
@@ -226,6 +206,8 @@
 	})();
 
 	// END bridge
+	
+	phonegapGuard();
 	
 	console.log('soup-addon.js bridged on ' + (location.host || location));
 	

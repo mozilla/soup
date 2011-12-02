@@ -212,8 +212,6 @@ public class AppsProvider extends ContentProvider {
 			values.put(AppsContract.Apps.STATUS, 0);
 		}
 
-		// TODO Add other defaults
-
 		SQLiteDatabase db = mOpenHelper.getWritableDatabase();
 		long rowId = db.insert(APPS_TABLE_NAME, null, values);
 

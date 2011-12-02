@@ -114,7 +114,6 @@ public class ImageFactory {
 				}
 
 				try {
-					// TODO: check for HTTP caching headers
 					final HttpClient httpClient = SoupClient.getHttpClient(context.getApplicationContext());
 					final HttpResponse resp = httpClient.execute(new HttpGet(url));
 					final HttpEntity entity = resp.getEntity();
