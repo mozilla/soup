@@ -125,7 +125,6 @@ public class MozAppsMgmtPlugin extends Plugin implements Observer {
 	}
 
 	private PluginResult list(boolean update) {
-		// TODO: Wait for sync
 
 		Cursor cur = ctx.getContentResolver().query(Apps.CONTENT_URI,
 				Apps.APP_PROJECTION, null, null, Apps.DEFAULT_SORT_ORDER);

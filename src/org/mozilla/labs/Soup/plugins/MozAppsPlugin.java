@@ -106,9 +106,9 @@ public class MozAppsPlugin extends Plugin {
 			final String origin) throws Exception {
 
 		JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
-		
+
 		Log.d(TAG, "Parsed manifest: " + manifest);
-		
+
 		if (manifest == null) {
 			return new PluginResult(Status.ERROR, 0);
 		}
@@ -155,7 +155,7 @@ public class MozAppsPlugin extends Plugin {
 				values.put(Apps.INSTALL_RECEIPT, install_data.optString("receipt"));
 			}
 		}
-		
+
 		final String launchUri = origin + manifest.optString("launch_path", "");
 
 		ctx.runOnUiThread(new Runnable() {
@@ -180,9 +180,6 @@ public class MozAppsPlugin extends Plugin {
 										appSettings[whichButton] = isChecked;
 									}
 								}).setCancelable(true);
-
-				// TODO: Custom layout. Message breaks multiple choice
-				// .setMessage(description); // TODO: Truncate text with TextUtils.EllipsizeCallback
 
 				if (bitmap != null) {
 					installDlg.setIcon(new BitmapDrawable(bitmap));
