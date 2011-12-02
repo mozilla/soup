@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <phonegap>
     <access origin="*"/>
-    <log level="WARN"/>
+    <log level="INFO"/>
 </phonegap>

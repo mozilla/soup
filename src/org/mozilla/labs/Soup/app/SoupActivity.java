@@ -79,7 +79,7 @@ public abstract class SoupActivity extends DroidGap {
 
 			Uri uri = Uri.parse(url);
 			if (uri != null) {
-				SoupActivity.this.setTitle(uri.getHost());
+				SoupActivity.this.setTitle("Loading " + uri.getHost());
 			}
 
 			ProgressBar progress = (ProgressBar) childRoot
@@ -214,7 +214,7 @@ public abstract class SoupActivity extends DroidGap {
 
 			Uri uri = Uri.parse(url);
 			if (uri != null) {
-				SoupActivity.this.setTitle(uri.getHost());
+				SoupActivity.this.setTitle("Loading " + uri.getHost());
 			}
 
 			titleView.setVisibility(View.VISIBLE);
@@ -297,6 +297,8 @@ public abstract class SoupActivity extends DroidGap {
 		@Override
 		public boolean onCreateWindow(WebView view, boolean modal, boolean user,
 				Message result) {
+			
+			titleView.setVisibility(View.GONE);
 			
 			LayoutInflater inflater = LayoutInflater.from(SoupActivity.this);
 
@@ -583,7 +585,10 @@ public abstract class SoupActivity extends DroidGap {
 		titleView.setVisibility(View.VISIBLE);
 
 		appView.setVisibility(View.VISIBLE);
-
+		
+		// TODO: Debug why it shows up after popup closes
+		titleView.setVisibility(View.GONE);
+		
 		appView.requestFocus(View.FOCUS_DOWN);
 		appView.requestFocusFromTouch();
 
