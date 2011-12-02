@@ -44,8 +44,8 @@ public class MozIdPlugin extends Plugin {
 				return preVerify(audience);
 
 			} else if (action.equals("postVerify")) {
-
-				return postVerify(data.optString(0), data.optString(1));
+				
+				return postVerify(data);
 
 			}
 
@@ -120,15 +120,32 @@ public class MozIdPlugin extends Plugin {
 		return new PluginResult(Status.OK, event);
 	}
 
-	public PluginResult postVerify(final String audience, final String assertion)
+	public PluginResult postVerify(final JSONArray data)
 			throws Exception {
 
-		final SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(ctx);
+		if (data.isNull(1) || TextUtils.isEmpty(data.optString(1))) {
+			ctx.runOnUiThread(new Runnable() {
+
+				public void run() {
+					Toast.makeText(ctx, "Login failed (no assertion)", Toast.LENGTH_LONG)
+							.show();
+				}
+
+			});
+
+			return new PluginResult(Status.OK);
+		}
+		
+		final String audience = data.optString(0);
+		final String assertion = data.optString(1);
 
 		final String verifiedEmail = SoupClient.verifyId(ctx, assertion, audience);
 
-		Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience);
+		Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience
+				+ " using " + assertion);
+
+		final SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(ctx);
 
 		if (verifiedEmail != null) {
 			JSONObject assertions = new JSONObject(prefs.getString("assertions",
@@ -141,7 +158,7 @@ public class MozIdPlugin extends Plugin {
 				ctx.runOnUiThread(new Runnable() {
 
 					public void run() {
-						Toast.makeText(ctx, "Remember login for " + verifiedEmail,
+						Toast.makeText(ctx, "Remembered login for " + verifiedEmail,
 								Toast.LENGTH_LONG).show();
 
 						prefs.edit().putString("email", verifiedEmail).commit();
@@ -158,16 +175,9 @@ public class MozIdPlugin extends Plugin {
 			ctx.runOnUiThread(new Runnable() {
 
 				public void run() {
-					if (TextUtils.isEmpty(assertion) || assertion.equals("null")) {
-						Toast.makeText(ctx, "Login failed (no assertion)",
-								Toast.LENGTH_SHORT).show();
-					} else {
-						Toast.makeText(ctx, "Verify failed for " + assertion,
-								Toast.LENGTH_SHORT).show();
-					}
-
+					Toast.makeText(ctx, "Verify failed for " + audience,
+							Toast.LENGTH_LONG).show();
 				}
-
 			});
 
 			return new PluginResult(Status.OK);

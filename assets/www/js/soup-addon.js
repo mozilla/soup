@@ -4,7 +4,41 @@
 	
 	var plugins = (window.plugins = window.plugins || {}), empty = function() {};
 	
-	// TODO: Implement promise to have all calls pending until phonegap plugins are ready
+	function logPhonegapChannel(name) {
+		if (PhoneGap[name].fired) {
+			console.log(name + ' FIRED');
+		} else {
+			console.log(name + ' pending');
+			PhoneGap[name].subscribeOnce(function() {
+				console.log(name + ': FIRED delayed');
+			})
+		}
+	};
+	
+	function promise(cb) {
+		// Fix post-load injected phonegap dependence on onDOMContentLoaded
+		if (window.PhoneGap) {
+			if (PhoneGap.onPhoneGapInit.fired) {
+				console.log('promise instant FIRE');
+				return cb();
+			} else {
+				console.log('promise delayed');
+				
+				// logPhonegapChannel('onPhoneGapReady');
+				// logPhonegapChannel('onPhoneGapInit');
+				// logPhonegapChannel('onNativeReady');
+				// logPhonegapChannel('onDOMContentLoaded');
+				// logPhonegapChannel('onPhoneGapConnectionReady');
+				
+				PhoneGap.onPhoneGapInit.subscribeOnce(cb);
+				
+				if (!PhoneGap.onNativeReady.fired) PhoneGap.onNativeReady.fire();
+				if (!PhoneGap.onDOMContentLoaded.fired) PhoneGap.onDOMContentLoaded.fire();
+			}
+			
+		}
+	};
+	
 	
 	/**
 	 * .id bridge
@@ -12,82 +46,73 @@
 
 	var id = (navigator.id = navigator.id || {});
 	
-	function phonegapGuard() {
-		// Fix post-load injected phonegap dependence on onDOMContentLoaded
-		if (document.readyState == 'complete' && window.PhoneGap && !PhoneGap.onDOMContentLoaded.fired) {
-			PhoneGap.onNativeReady.fire();
-			PhoneGap.onDOMContentLoaded.fire();
-		}
-	};
-	
 	(function bridgeId() {
-
-		var audience, origin, assertion, popup, timer;
 
 		id.getVerifiedEmail = function(callback) {
 			
-			phonegapGuard();
-			
-			plugins.mozId.preVerify(function(evt) {
-				audience = evt.audience;
-				origin = evt.origin;
-				email = evt.email || null;
+			promise(function() {
 				
-				console.log("getVerifiedEmail for " + audience);
-				
-				if (evt.assertion) {
-					setTimeout(function() {
-						callback(evt.assertion);
-					}, 10);
-					return;
-				}
-				
-				var data = JSON.stringify({
-					origin: location.protocol + '//' + location.host,
-					audience: audience,
-					email: email
-				});
-				
-				console.log("getVerifiedEmail starts with " + data);
-				
-				function oncomplete(assertion) {
-					callback(assertion);
-				};
-				function onmessage(evt) {
-					evt.stopPropagation();
+				plugins.mozId.preVerify(function(evt) {
+					var audience = evt.audience;
+					var origin = evt.origin;
+					var email = evt.email || null;
 					
-					if (timer) {
-						console.log("getVerifiedEmail cleaned postMessage setInterval");
-						clearInterval(timer);
-						timer = null;
-					}
-		
-					if (evt.origin != origin || !popup)
+					console.log("getVerifiedEmail for " + audience);
+					
+					if (evt.assertion) {
+						setTimeout(function() {
+							callback(evt.assertion);
+						}, 10);
 						return;
-					
-					window.removeEventListener('message', onmessage, false);
-					
-					if (popup) {
-						if (popup.close) popup.close();
-						popup = null;
 					}
-		
-					plugins.mozId.postVerify(audience, evt.data || null, oncomplete, oncomplete);
-				};
-				
-				window.addEventListener('message', onmessage, false);
-				
-				popup = window.open(evt.url, '_moz_verify');
-				
-				timer = setInterval(function() {
-					if (!popup || !popup.postMessage) {
-						console.log("getVerifiedEmail killed postMessage setInterval");
-						clearInterval(timer);
-						timer = null;
-					} else {
-						popup.postMessage(data, origin);
-					}
-				}, 50);
+					
+					var data = JSON.stringify({
+						origin: location.protocol + '//' + location.host,
+						audience: audience,
+						email: email
+					});
+					
+					console.log("getVerifiedEmail starts with " + data);
+					
+					function oncomplete(assertion) {
+						callback(assertion);
+					};
+					function onmessage(evt) {
+						evt.stopPropagation();
+						
+						if (timer) {
+							console.log("getVerifiedEmail cleaned postMessage setInterval");
+							clearInterval(timer);
+							timer = null;
+						}
+			
+						if (evt.origin != origin || !popup)
+							return;
+						
+						window.removeEventListener('message', onmessage, false);
+						
+						if (popup) {
+							if (popup.close) popup.close();
+							popup = null;
+						}
+			
+						plugins.mozId.postVerify(audience, evt.data || null, oncomplete, oncomplete);
+					};
+					
+					window.addEventListener('message', onmessage, false);
+					
+					var popup = window.open(evt.url, '_moz_verify');
+					
+					var timer = setInterval(function() {
+						if (!popup || !popup.postMessage) {
+							console.log("getVerifiedEmail killed postMessage setInterval");
+							clearInterval(timer);
+							timer = null;
+						} else {
+							popup.postMessage(data, origin);
+						}
+					}, 50);
+				});
 			});
 		};
 
@@ -165,40 +190,47 @@
 	(function bridgeApps() {
 
 		apps.install = function(url, install_data, onsuccess, onerror) {
-			phonegapGuard();
-			plugins.mozApps.install(url, install_data, onsuccess, onerror);
+			promise(function() {
+				plugins.mozApps.install(url, install_data, onsuccess, onerror);
+			});
 		};
 
 		apps.amInstalled = function(onsuccess, onerror) {
-			phonegapGuard();
-			plugins.mozApps.amInstalled(onsuccess, onerror);
+			promise(function() {
+				plugins.mozApps.amInstalled(onsuccess, onerror);
+			});
 		};
 
 		apps.enumerate = apps.getInstalledBy = function(onsuccess, onerror) {
-			phonegapGuard();
-			plugins.mozAppsMgmt.list(onsuccess, onerror);
+			promise(function() {
+				plugins.mozAppsMgmt.list(onsuccess, onerror);
+			});
 		};
 
 		apps.mgmt = apps.mgmt || {};
 
 		apps.mgmt.list = function(onsuccess, onerror) {
-			phonegapGuard();
-			plugins.mozAppsMgmt.list(onsuccess, onerror);
+			promise(function() {
+				plugins.mozAppsMgmt.list(onsuccess, onerror);
+			});
 		};
 
 		apps.mgmt.launch = function(origin, onsuccess, onerror) {
-			phonegapGuard();
-			plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
+			promise(function() {
+				plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
+			});
 		};
 
 		apps.mgmt.watchUpdates = function(onsuccess) {
-			phonegapGuard();	
-			return plugins.mozAppsMgmt.watchUpdates(onsuccess);
+			return promise(function() {	
+				return plugins.mozAppsMgmt.watchUpdates(onsuccess);
+			});
 		};
 		
 		apps.mgmt.clearWatch = function(id) {
-			phonegapGuard();
-			return plugins.mozAppsMgmt.clearWatch(id);
+			return promise(function() {
+				return plugins.mozAppsMgmt.clearWatch(id);
+			});
 		};
 		
 		console.log('soup-addon.js bridged *apps* on ' + (location.host || location));
@@ -206,8 +238,6 @@
 	})();
 
 	// END bridge
-	
-	phonegapGuard();
 	
 	console.log('soup-addon.js bridged on ' + (location.host || location));
 	
