@@ -54,9 +54,7 @@ soup.App = (function() {
 	
 	App.renderList = function(list) {
 		console.log('Apps.renderList ' + list.length);
-		
-		if (!list || !list.length) return;
-		
+
 		var container = document.getElementById('myapps');
 		container.innerHTML = '';
 		

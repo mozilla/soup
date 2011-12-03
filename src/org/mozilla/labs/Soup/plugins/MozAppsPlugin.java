@@ -14,6 +14,7 @@ import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 import org.mozilla.labs.Soup.service.SoupClient;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -64,7 +65,7 @@ public class MozAppsPlugin extends Plugin {
 						public void run() {
 							Toast.makeText(ctx,
 									app.optJSONObject("manifest").optString("name") + " updated",
-									Toast.LENGTH_LONG).show();
+									Toast.LENGTH_SHORT).show();
 						}
 					});
 
@@ -105,62 +106,66 @@ public class MozAppsPlugin extends Plugin {
 			final String manifestUri, final JSONObject install_data,
 			final String origin) throws Exception {
 
-		JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
-
-		Log.d(TAG, "Parsed manifest: " + manifest);
-
-		if (manifest == null) {
-			return new PluginResult(Status.ERROR, 0);
-		}
-
-		final ContentValues values = new ContentValues();
-
-		final String name = manifest.getString("name");
-		final String description = manifest.getString("description");
-		values.put(Apps.NAME, name);
-		values.put(Apps.DESCRIPTION, description);
-
-		Bitmap icon = null;
-		JSONObject icons = manifest.optJSONObject("icons");
-
-		if (icons != null && icons.length() > 0) {
-			JSONArray sizes = icons.names();
-
-			List<Integer> sizesSort = new ArrayList<Integer>();
-			for (int i = 0, l = sizes.length(); i < l; i++) {
-				sizesSort.add(sizes.getInt(i));
-			}
-			String max = Collections.max(sizesSort).toString();
-
-			String iconUrl = origin + icons.getString(max);
-			icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
-		}
-
-		final Bitmap bitmap = icon;
-
-		if (bitmap != null) {
-			values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
-		} else {
-			Log.w(TAG, "Could not load icon from " + icons);
-		}
-
-		values.put(Apps.ORIGIN, origin);
-		values.put(Apps.MANIFEST_URL, manifestUri);
-		values.put(Apps.MANIFEST, manifest.toString());
-
-		if (install_data != null) {
-			values.put(Apps.INSTALL_DATA, install_data.toString());
-
-			if (install_data.has("receipt")) {
-				values.put(Apps.INSTALL_RECEIPT, install_data.optString("receipt"));
-			}
-		}
-
-		final String launchUri = origin + manifest.optString("launch_path", "");
-
 		ctx.runOnUiThread(new Runnable() {
 
 			public void run() {
+				
+				ProgressDialog dlg = ProgressDialog.show(ctx, null, "Preparing installation", true, false);
+
+				JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
+
+				Log.d(TAG, "Parsed manifest: " + manifest);
+
+				if (manifest == null) {
+					dlg.dismiss();
+					error(new PluginResult(Status.ERROR, 0), callbackId);
+					return;
+				}
+
+				final ContentValues values = new ContentValues();
+
+				final String name = manifest.optString("name");
+				final String description = manifest.optString("description");
+				values.put(Apps.NAME, name);
+				values.put(Apps.DESCRIPTION, description);
+
+				Bitmap icon = null;
+				JSONObject icons = manifest.optJSONObject("icons");
+
+				if (icons != null && icons.length() > 0) {
+					JSONArray sizes = icons.names();
+
+					List<Integer> sizesSort = new ArrayList<Integer>();
+					for (int i = 0, l = sizes.length(); i < l; i++) {
+						sizesSort.add(sizes.optInt(i));
+					}
+					String max = Collections.max(sizesSort).toString();
+
+					String iconUrl = origin + icons.optString(max);
+					icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
+				}
+
+				final Bitmap bitmap = icon;
+
+				if (bitmap != null) {
+					values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
+				} else {
+					Log.w(TAG, "Could not load icon from " + icons);
+				}
+
+				values.put(Apps.ORIGIN, origin);
+				values.put(Apps.MANIFEST_URL, manifestUri);
+				values.put(Apps.MANIFEST, manifest.toString());
+
+				if (install_data != null) {
+					values.put(Apps.INSTALL_DATA, install_data.toString());
+
+					if (install_data.has("receipt")) {
+						values.put(Apps.INSTALL_RECEIPT, install_data.optString("receipt"));
+					}
+				}
+
+				final String launchUri = origin + manifest.optString("launch_path", "");
 
 				SharedPreferences prefs = PreferenceManager
 						.getDefaultSharedPreferences(ctx);
@@ -168,6 +173,8 @@ public class MozAppsPlugin extends Plugin {
 				final boolean[] appSettings = new boolean[] {
 						prefs.getBoolean("install_launch", true),
 						prefs.getBoolean("install_shortcut", true) };
+				
+				dlg.dismiss();
 
 				AlertDialog.Builder installDlg = new AlertDialog.Builder(ctx);
 
