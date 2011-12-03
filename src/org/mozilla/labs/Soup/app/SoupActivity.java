@@ -1,17 +1,29 @@
 package org.mozilla.labs.Soup.app;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
+import org.mozilla.labs.Soup.provider.AppsContract.Apps;
+import org.mozilla.labs.Soup.provider.AppsContract;
+import org.mozilla.labs.Soup.provider.AppsProvider;
 
+import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
@@ -20,6 +32,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -146,7 +159,7 @@ public abstract class SoupActivity extends DroidGap {
 			ImageView image = (ImageView) childRoot.findViewById(R.id.title_image);
 			image.setImageBitmap(icon);
 		}
-		
+
 		/*
 		 * (non-Javadoc)
 		 * 
@@ -156,14 +169,14 @@ public abstract class SoupActivity extends DroidGap {
 		public boolean onCreateWindow(WebView view, boolean modal, boolean user,
 				Message result) {
 			Log.w(TAG + ".SoupChildChromeClient", "onCreateWindow");
-			
+
 			WebView.WebViewTransport transport = (WebView.WebViewTransport) result.obj;
 
 			closeChildView();
-			
+
 			transport.setWebView(appView);
 			result.sendToTarget();
-			
+
 			return true;
 		}
 
@@ -297,9 +310,9 @@ public abstract class SoupActivity extends DroidGap {
 		@Override
 		public boolean onCreateWindow(WebView view, boolean modal, boolean user,
 				Message result) {
-			
+
 			titleView.setVisibility(View.GONE);
-			
+
 			LayoutInflater inflater = LayoutInflater.from(SoupActivity.this);
 
 			childRoot = inflater.inflate(R.layout.popup, null);
@@ -400,7 +413,7 @@ public abstract class SoupActivity extends DroidGap {
 		}
 
 		builder.append("; } catch(e) { if (e.message) console.error(e); }");
-		
+
 		Log.d(TAG, "injectJavaScript: " + builder.length());
 
 		view.loadUrl(builder.toString());
@@ -531,13 +544,8 @@ public abstract class SoupActivity extends DroidGap {
 
 	public boolean onPrepareOptionsMenu(Menu menu) {
 
-		// TODO: Hide login/logout based on status
-		menu.findItem(R.id.global_login).setVisible(false);
-		menu.findItem(R.id.global_logout).setVisible(false);
-		
-		// TODO: Show refresh/stop based on page status
-		menu.findItem(R.id.global_refresh).setVisible(true);
-		menu.findItem(R.id.global_stop).setVisible(false);
+		menu.findItem(R.id.global_launcher).setVisible(!(this instanceof LauncherActivity));
+		menu.findItem(R.id.global_store).setVisible(!(this instanceof StoreActivity));
 
 		return super.onPrepareOptionsMenu(menu);
 
@@ -561,13 +569,37 @@ public abstract class SoupActivity extends DroidGap {
 			} else {
 				appView.reload();
 			}
-			
+
 			return true;
 		}
 		case R.id.global_login: {
 			return true;
 		}
+		case R.id.global_store: {
+			startActivity(new Intent(this, StoreActivity.class));
+			return true;
+		}
+		case R.id.global_launcher: {
+			startActivity(new Intent(this, LauncherActivity.class));
+			return true;
+		}
 		case R.id.global_logout: {
+
+			AlertDialog.Builder dlg = new AlertDialog.Builder(this);
+
+			dlg.setMessage("Are you sure you want to clear all personal data?")
+					.setCancelable(true)
+					.setPositiveButton(android.R.string.ok,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									((SoupApplication) SoupActivity.this.getApplication())
+											.clearData(SoupActivity.this);
+								}
+							});
+
+			dlg.create();
+			dlg.show();
+
 			return true;
 		}
 		}
@@ -585,10 +617,10 @@ public abstract class SoupActivity extends DroidGap {
 		titleView.setVisibility(View.VISIBLE);
 
 		appView.setVisibility(View.VISIBLE);
-		
+
 		// TODO: Debug why it shows up after popup closes
 		titleView.setVisibility(View.GONE);
-		
+
 		appView.requestFocus(View.FOCUS_DOWN);
 		appView.requestFocusFromTouch();
 

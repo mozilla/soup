@@ -257,10 +257,9 @@ public class SyncService extends IntentService {
 			} else if (uploaded > 0) {
 				Toast.makeText(ctx, "Uploaded " + uploaded + " app(s)",
 						Toast.LENGTH_SHORT).show();
-			} else {
-				hideNotification();
-				// Toast.makeText(ctx, "Nothing to sync", Toast.LENGTH_SHORT).show();
 			}
+			
+			hideNotification();
 
 		} catch (Exception e) {
 			Log.e(TAG, "Sync unsuccessful", e);
@@ -284,8 +283,6 @@ public class SyncService extends IntentService {
 			
 			receiver.send(STATUS_FINISHED, bundle);
 		}
-
-		stopSelf();
 	}
 
 	/**

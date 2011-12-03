@@ -1,17 +1,21 @@
 package org.mozilla.labs.Soup.app;
 
+import java.io.File;
 import java.util.Observable;
 
 import org.mozilla.labs.Soup.R;
 import org.mozilla.labs.Soup.service.DetachableResultReceiver;
 import org.mozilla.labs.Soup.service.SyncService;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 public class SoupApplication extends Application {
 
@@ -100,6 +104,57 @@ public class SoupApplication extends Application {
 
 	public void triggerSync() {
 		syncManager.startSync();
+	}
+
+	
+	public void clearData(Activity activity) {
+		// TODO: Find a clean way to reset
+
+		Log.d(TAG, "Deleting webview.db " + deleteDatabase("webview.db"));
+		Log.d(TAG, "Deleting webviewCache.db "
+				+ deleteDatabase("webviewCache.db"));
+		Log.d(TAG, "Deleting apps.db " + deleteDatabase("apps.db"));
+
+		SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(this);
+		prefs.edit().clear().commit();
+
+		PreferenceManager.setDefaultValues(this, R.xml.preferences, true);
+
+		deleteCache();
+		
+		Toast.makeText(activity, "Personal data cleared!", Toast.LENGTH_SHORT);
+
+		Intent intent = new Intent(this, LauncherActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+		
+		activity.startActivity(intent);
+		
+		activity.finish();
+	}
+
+	private void deleteCache() {
+		try {
+			File dir = getCacheDir();
+			if (dir != null && dir.isDirectory()) {
+				deleteDir(dir);
+			}
+		} catch (Exception e) {
+			Log.w(TAG, "Could not delete cache", e);
+		}
+	}
+
+	private boolean deleteDir(File dir) {
+		if (dir != null && dir.isDirectory()) {
+			String[] children = dir.list();
+			for (String file : children) {
+				if (!deleteDir(new File(dir, file))) {
+					return false;
+				}
+			}
+		}
+
+		return dir.delete();
 	}
 
 }
