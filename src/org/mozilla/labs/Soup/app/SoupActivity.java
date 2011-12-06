@@ -47,6 +47,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.phonegap.DroidGap;
 
@@ -476,6 +477,11 @@ public abstract class SoupActivity extends DroidGap {
 		return true;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.phonegap.DroidGap#init()
+	 */
 	public void init() {
 		super.init();
 
@@ -490,6 +496,11 @@ public abstract class SoupActivity extends DroidGap {
 		root.addView(appView);
 	}
 
+	/*
+	 * Custom setTitle to handle custom title bar, including for popups
+	 * 
+	 * @see android.app.Activity#setTitle(java.lang.CharSequence)
+	 */
 	public void setTitle(CharSequence title) {
 		super.setTitle(title);
 
@@ -542,10 +553,17 @@ public abstract class SoupActivity extends DroidGap {
 		return true;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onPrepareOptionsMenu(android.view.Menu)
+	 */
 	public boolean onPrepareOptionsMenu(Menu menu) {
 
-		menu.findItem(R.id.global_launcher).setVisible(!(this instanceof LauncherActivity));
-		menu.findItem(R.id.global_store).setVisible(!(this instanceof StoreActivity));
+		menu.findItem(R.id.global_launcher).setVisible(
+				!(this instanceof LauncherActivity));
+		menu.findItem(R.id.global_store).setVisible(
+				!(this instanceof StoreActivity));
 
 		return super.onPrepareOptionsMenu(menu);
 
@@ -587,7 +605,8 @@ public abstract class SoupActivity extends DroidGap {
 
 			AlertDialog.Builder dlg = new AlertDialog.Builder(this);
 
-			dlg.setMessage("Are you sure you want to clear all personal data?")
+			dlg.setTitle("Confirm signout")
+					.setMessage("Are you sure you want to clear all personal data?")
 					.setCancelable(true)
 					.setPositiveButton(android.R.string.ok,
 							new DialogInterface.OnClickListener() {
@@ -595,7 +614,14 @@ public abstract class SoupActivity extends DroidGap {
 									((SoupApplication) SoupActivity.this.getApplication())
 											.clearData(SoupActivity.this);
 								}
+							})
+					.setNegativeButton(android.R.string.cancel,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									Toast.makeText(SoupActivity.this, "Logout cancelled", Toast.LENGTH_SHORT).show();
+								}
 							});
+			;
 
 			dlg.create();
 			dlg.show();
@@ -606,6 +632,9 @@ public abstract class SoupActivity extends DroidGap {
 		return false;
 	}
 
+	/**
+	 * Close and destroy popup window
+	 */
 	public void closeChildView() {
 		if (childView == null)
 			return;
@@ -628,6 +657,9 @@ public abstract class SoupActivity extends DroidGap {
 		childView = null;
 	}
 
+	/**
+	 * Intent for all webkit-enabled Soup activities
+	 */
 	protected abstract void onResolveIntent();
 
 }

@@ -38,7 +38,7 @@ public class ImageFactory {
 		Bitmap bitmap = null;
 		try {
 			bitmap = BitmapFactory.decodeStream((InputStream) new URL(uri).getContent());
-		} catch (IOException e) {
+		} catch (Exception e) {
 			Log.w(TAG, "BitmapFactory.decodeStream", e);
 		}
 		
@@ -90,63 +90,8 @@ public class ImageFactory {
 			@Override
 			protected Bitmap doInBackground(String... params) {
 				final String url = params[0];
-				if (TextUtils.isEmpty(url)) {
-					return null;
-				}
-
-				// First compute the cache key and cache file path for this URL
-				File cacheFile = null;
-				try {
-					MessageDigest mDigest = MessageDigest.getInstance("SHA-1");
-					mDigest.update(url.getBytes());
-					final String cacheKey = bytesToHexString(mDigest.digest());
-					// if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
-					cacheFile = new File(context.getCacheDir() + File.separator + "bitmap_" + cacheKey + ".tmp");
-				} catch (NoSuchAlgorithmException e) {
-					// Oh well, SHA-1 not available (weird), don't cache bitmaps.
-				}
-
-				if (cacheFile != null && cacheFile.exists()) {
-					Bitmap cachedBitmap = BitmapFactory.decodeFile(cacheFile.toString(), decodeOptions);
-					if (cachedBitmap != null) {
-						return cachedBitmap;
-					}
-				}
-
-				try {
-					final HttpClient httpClient = SoupClient.getHttpClient(context.getApplicationContext());
-					final HttpResponse resp = httpClient.execute(new HttpGet(url));
-					final HttpEntity entity = resp.getEntity();
-
-					final int statusCode = resp.getStatusLine().getStatusCode();
-					if (statusCode != HttpStatus.SC_OK || entity == null) {
-						return null;
-					}
-
-					final byte[] respBytes = EntityUtils.toByteArray(entity);
-
-					// Write response bytes to cache.
-					if (cacheFile != null) {
-						try {
-							cacheFile.getParentFile().mkdirs();
-							cacheFile.createNewFile();
-							FileOutputStream fos = new FileOutputStream(cacheFile);
-							fos.write(respBytes);
-							fos.close();
-						} catch (FileNotFoundException e) {
-							Log.w(TAG, "Error writing to bitmap cache: " + cacheFile.toString(), e);
-						} catch (IOException e) {
-							Log.w(TAG, "Error writing to bitmap cache: " + cacheFile.toString(), e);
-						}
-					}
-
-					// Decode the bytes and return the bitmap.
-					return BitmapFactory.decodeByteArray(respBytes, 0, respBytes.length, decodeOptions);
-				} catch (Exception e) {
-					Log.w(TAG, "Problem while loading image: " + e.toString(), e);
-				}
-
-				return null;
+				
+				return fetchImageSync(context, url, decodeOptions);
 			}
 
 			@Override
@@ -154,6 +99,66 @@ public class ImageFactory {
 				callback.onFetchComplete(cookie, result);
 			}
 		}.execute(url);
+	}
+	
+	private static Bitmap fetchImageSync(final Context context, final String url, final BitmapFactory.Options decodeOptions) {
+		if (TextUtils.isEmpty(url)) {
+			return null;
+		}
+
+		// First compute the cache key and cache file path for this URL
+		File cacheFile = null;
+		try {
+			MessageDigest mDigest = MessageDigest.getInstance("SHA-1");
+			mDigest.update(url.getBytes());
+			final String cacheKey = bytesToHexString(mDigest.digest());
+			// if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()))
+			cacheFile = new File(context.getCacheDir() + File.separator + "bitmap_" + cacheKey + ".tmp");
+		} catch (NoSuchAlgorithmException e) {
+			// Oh well, SHA-1 not available (weird), don't cache bitmaps.
+		}
+
+		if (cacheFile != null && cacheFile.exists()) {
+			Bitmap cachedBitmap = BitmapFactory.decodeFile(cacheFile.toString(), decodeOptions);
+			if (cachedBitmap != null) {
+				return cachedBitmap;
+			}
+		}
+
+		try {
+			final HttpClient httpClient = SoupClient.getHttpClient(context.getApplicationContext());
+			final HttpResponse resp = httpClient.execute(new HttpGet(url));
+			final HttpEntity entity = resp.getEntity();
+
+			final int statusCode = resp.getStatusLine().getStatusCode();
+			if (statusCode != HttpStatus.SC_OK || entity == null) {
+				return null;
+			}
+
+			final byte[] respBytes = EntityUtils.toByteArray(entity);
+
+			// Write response bytes to cache.
+			if (cacheFile != null) {
+				try {
+					cacheFile.getParentFile().mkdirs();
+					cacheFile.createNewFile();
+					FileOutputStream fos = new FileOutputStream(cacheFile);
+					fos.write(respBytes);
+					fos.close();
+				} catch (FileNotFoundException e) {
+					Log.w(TAG, "Error writing to bitmap cache: " + cacheFile.toString(), e);
+				} catch (IOException e) {
+					Log.w(TAG, "Error writing to bitmap cache: " + cacheFile.toString(), e);
+				}
+			}
+
+			// Decode the bytes and return the bitmap.
+			return BitmapFactory.decodeByteArray(respBytes, 0, respBytes.length, decodeOptions);
+		} catch (Exception e) {
+			Log.w(TAG, "Problem while loading image: " + e.toString(), e);
+		}
+
+		return null;
 	}
 
 	// http://stackoverflow.com/questions/332079
