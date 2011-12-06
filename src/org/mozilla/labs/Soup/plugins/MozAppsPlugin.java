@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
 import org.mozilla.labs.Soup.app.AppActivity;
@@ -109,23 +110,32 @@ public class MozAppsPlugin extends Plugin {
 		ctx.runOnUiThread(new Runnable() {
 
 			public void run() {
-				
-				ProgressDialog dlg = ProgressDialog.show(ctx, null, "Preparing installation", true, false);
 
+				ProgressDialog dlg = ProgressDialog.show(ctx, null,
+						"Preparing installation", true, false);
+
+				// TODO: More error codes (JSON vs IO)
 				JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
 
 				Log.d(TAG, "Parsed manifest: " + manifest);
 
 				if (manifest == null) {
 					dlg.dismiss();
-					error(new PluginResult(Status.ERROR, 0), callbackId);
+
+					JSONObject errorEvent = null;
+					try {
+						errorEvent = new JSONObject().put("code", "networkError").put("message", "networkError");
+					} catch (JSONException e) {
+					}
+					error(new PluginResult(Status.ERROR, errorEvent), callbackId);
+
 					return;
 				}
 
 				final ContentValues values = new ContentValues();
 
-				final String name = manifest.optString("name");
-				final String description = manifest.optString("description");
+				final String name = manifest.optString("name", "No Name");
+				final String description = manifest.optString("description", "");
 				values.put(Apps.NAME, name);
 				values.put(Apps.DESCRIPTION, description);
 
@@ -140,8 +150,11 @@ public class MozAppsPlugin extends Plugin {
 						sizesSort.add(sizes.optInt(i));
 					}
 					String max = Collections.max(sizesSort).toString();
-
+					
 					String iconUrl = origin + icons.optString(max);
+					
+					Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
+					
 					icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
 				}
 
@@ -171,9 +184,9 @@ public class MozAppsPlugin extends Plugin {
 						.getDefaultSharedPreferences(ctx);
 
 				final boolean[] appSettings = new boolean[] {
-						prefs.getBoolean("install_launch", true),
-						prefs.getBoolean("install_shortcut", true) };
-				
+						prefs.getBoolean("install_shortcut", true),
+						prefs.getBoolean("install_launch", true) };
+
 				dlg.dismiss();
 
 				AlertDialog.Builder installDlg = new AlertDialog.Builder(ctx);
@@ -195,8 +208,15 @@ public class MozAppsPlugin extends Plugin {
 				installDlg.setNegativeButton(android.R.string.cancel,
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int which) {
-								// FIXME: add error object
-								error(new PluginResult(Status.ERROR, 0), callbackId);
+
+								JSONObject errorEvent = null;
+								try {
+									errorEvent = new JSONObject().put("code", "denied").put(
+											"message", "denied");
+								} catch (JSONException e) {
+								}
+								error(new PluginResult(Status.ERROR, errorEvent), callbackId);
+
 							}
 						}).setPositiveButton(android.R.string.ok,
 						new DialogInterface.OnClickListener() {
@@ -206,8 +226,14 @@ public class MozAppsPlugin extends Plugin {
 										Apps.CONTENT_URI, values);
 
 								if (uri == null) {
-									// FIXME: add error object
-									error(new PluginResult(Status.ERROR, 0), callbackId);
+									JSONObject errorEvent = null;
+									try {
+										errorEvent = new JSONObject().put("code", "denied").put(
+												"message", "denied");
+									} catch (JSONException e) {
+									}
+									error(new PluginResult(Status.ERROR, errorEvent), callbackId);
+
 									return;
 								}
 
@@ -222,7 +248,9 @@ public class MozAppsPlugin extends Plugin {
 								// TODO: Move one more place to sync
 								((SoupApplication) ctx.getApplication()).triggerSync();
 
-								if (appSettings[1]) {
+								if (appSettings[0]) {
+									Log.d(TAG, "Install creates shortcut");
+									
 									Intent intent = new Intent();
 									intent
 											.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
@@ -238,7 +266,9 @@ public class MozAppsPlugin extends Plugin {
 									ctx.sendBroadcast(intent);
 								}
 
-								if (appSettings[0]) {
+								if (appSettings[1]) {
+									Log.d(TAG, "Install launches app");
+									
 									ctx.startActivity(shortcutIntent);
 								}
 
@@ -254,4 +284,5 @@ public class MozAppsPlugin extends Plugin {
 		result.setKeepCallback(true);
 		return result;
 	}
+
 }

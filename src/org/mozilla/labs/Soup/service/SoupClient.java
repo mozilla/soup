@@ -29,6 +29,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
@@ -136,17 +137,20 @@ public class SoupClient {
 
 			final int status = resp.getStatusLine().getStatusCode();
 			if (status != HttpStatus.SC_OK) {
+				resp.getEntity().consumeContent();
+				
 				throw new Exception("Unexpected server response "
 						+ resp.getStatusLine() + " for " + ident);
 			}
 
-			String body = EntityUtils.toString(resp.getEntity());
+			String body = EntityUtils.toString(resp.getEntity(), HTTP.UTF_8);
+			resp.getEntity().consumeContent();
 
 			try {
 				// TODO: Make thread-safe (as it is used in a service)
 				return new JSONObject(body);
 			} catch (Exception e) {
-				throw new Exception("Malformed response for " + ident, e);
+				throw new Exception("Malformed JSON response for " + ident + ": " + body, e);
 			}
 		} catch (Exception e) {
 			throw e;

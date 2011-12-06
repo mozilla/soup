@@ -24,12 +24,6 @@
 			} else {
 				console.log('promise delayed');
 				
-				// logPhonegapChannel('onPhoneGapReady');
-				// logPhonegapChannel('onPhoneGapInit');
-				// logPhonegapChannel('onNativeReady');
-				// logPhonegapChannel('onDOMContentLoaded');
-				// logPhonegapChannel('onPhoneGapConnectionReady');
-				
 				PhoneGap.onPhoneGapInit.subscribeOnce(cb);
 				
 				if (!PhoneGap.onNativeReady.fired) PhoneGap.onNativeReady.fire();
@@ -149,17 +143,25 @@
 				console.log("getVerifiedEmail received first postMessage with " + evt.data);
 				
 				var cb = function(assertion) {
+					if (fired) return;
+					fired = true;
+					
 					console.log("getVerifiedEmail received callback with assertion: " + (assertion != null));
 					
-					if (!fired) opener.postMessage(assertion, origin);
-					fired = true;
+					opener.postMessage(assertion, origin);
 				};
 				
 				if (data.email && 'BrowserID' in window && 'User' in BrowserID) {
 					console.log("getVerifiedEmail using BrowserID.User for " + data.email);
 					
 					BrowserID.User.setOrigin(data.audience);
-					BrowserID.User.getAssertion(data.email, cb, cb);
+					
+					BrowserID.User.syncEmailKeypair(data.email, function() {
+						BrowserID.User.getAssertion(data.email, cb, cb);
+					}, function() {
+						cb();
+					});
+					
 				} else {
 					console.log("getVerifiedEmail using controller.getVerifiedEmail " + data.audience);
 					

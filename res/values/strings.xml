@@ -3,8 +3,8 @@
 
     <string name="app_name">Soup</string>
     <string name="app_create_shortcut">Soup App</string>
-    <string name="app_name_launcher">Soup Apps</string>
-    <string name="app_name_store">Soup Store</string>
+    <string name="app_name_launcher">Soup Dashboard</string>
+    <string name="app_name_store">Soup Market</string>
     <string name="app_name_live">Soup Apps</string>
 
     <!-- Preferences -->

@@ -80,6 +80,10 @@ public class SyncService extends IntentService {
 		
 		try {
 
+			if (!SoupClient.authorize(this)) {
+				new Exception("User not authorized.");
+			}
+			
 			/**
 			 * Local list
 			 */
@@ -106,10 +110,6 @@ public class SyncService extends IntentService {
 			/**
 			 * Server list
 			 */
-			
-			if (!SoupClient.authorize(this)) {
-				new Exception("User not authorized.");
-			}
 
 			JSONObject response = SoupClient.getAllApps(this, localSince);
 
@@ -248,21 +248,10 @@ public class SyncService extends IntentService {
 			 * Visual feedback
 			 */
 			
-			if (installed > 0) {
-				Toast.makeText(ctx, "Installed " + installed + " apps",
-						Toast.LENGTH_SHORT).show();
-			} else if (updated > 0) {
-				Toast.makeText(ctx, "Updated " + updated + " apps",
-						Toast.LENGTH_SHORT).show();
-			} else if (uploaded > 0) {
-				Toast.makeText(ctx, "Uploaded " + uploaded + " app(s)",
-						Toast.LENGTH_SHORT).show();
-			}
-			
 			hideNotification();
 
 		} catch (Exception e) {
-			Log.e(TAG, "Sync unsuccessful", e);
+			Log.w(TAG, "Sync did not happen", e);
 			
 			hideNotification();
 
