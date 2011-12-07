@@ -180,6 +180,15 @@
 		// Script might got injected after load
 		if (controller) {
 			console.log("getVerifiedEmail channel.registerController restarted");
+			
+			// added via stomlinson
+			try {
+				controller.stateMachine();
+				console.log("getVerifiedEmail stateMachine success");
+			} catch (e) {
+				console.log("getVerifiedEmail stateMachine failed " + e);
+			}
+			
 			channel.registerController(controller);
 		}
 
