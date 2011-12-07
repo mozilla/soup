@@ -112,6 +112,8 @@ public abstract class SoupActivity extends DroidGap {
 
 			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
 				injectJavaScript(childView, false);
+			} else {
+				Log.d(TAG, "Skipped injectJavaScript");
 			}
 
 			ProgressBar progress = (ProgressBar) childRoot
