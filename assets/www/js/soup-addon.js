@@ -156,11 +156,15 @@
 					
 					BrowserID.User.setOrigin(data.audience);
 					
+					/*
 					BrowserID.User.syncEmailKeypair(data.email, function() {
 						BrowserID.User.getAssertion(data.email, cb, cb);
 					}, function() {
 						cb();
 					});
+					*/
+					
+					BrowserID.User.getAssertion(data.email, cb, cb);
 					
 				} else {
 					console.log("getVerifiedEmail using controller.getVerifiedEmail " + data.audience);

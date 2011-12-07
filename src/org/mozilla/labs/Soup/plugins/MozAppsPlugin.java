@@ -112,7 +112,7 @@ public class MozAppsPlugin extends Plugin {
 			public void run() {
 
 				ProgressDialog dlg = ProgressDialog.show(ctx, null,
-						"Preparing installation", true, false);
+						"Preparing installation", true, true);
 
 				// TODO: More error codes (JSON vs IO)
 				JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);

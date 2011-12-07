@@ -110,9 +110,11 @@ public class SoupApplication extends Application {
 	public void clearData(Activity activity) {
 		// TODO: Find a clean way to reset
 
-		Log.d(TAG, "Deleting webview.db " + deleteDatabase("webview.db"));
-		Log.d(TAG, "Deleting webviewCache.db "
-				+ deleteDatabase("webviewCache.db"));
+		// Buggy:
+//		Log.d(TAG, "Deleting webview.db " + deleteDatabase("webview.db"));
+//		Log.d(TAG, "Deleting webviewCache.db "
+//				+ deleteDatabase("webviewCache.db"));
+		
 		Log.d(TAG, "Deleting apps.db " + deleteDatabase("apps.db"));
 
 		SharedPreferences prefs = PreferenceManager

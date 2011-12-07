@@ -1,29 +1,19 @@
 package org.mozilla.labs.Soup.app;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
-import org.mozilla.labs.Soup.provider.AppsContract.Apps;
-import org.mozilla.labs.Soup.provider.AppsContract;
-import org.mozilla.labs.Soup.provider.AppsProvider;
 
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
@@ -32,7 +22,6 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.SubMenu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -565,8 +554,9 @@ public abstract class SoupActivity extends DroidGap {
 		menu.findItem(R.id.global_store).setVisible(
 				!(this instanceof StoreActivity));
 
-		return super.onPrepareOptionsMenu(menu);
+		menu.findItem(R.id.global_refresh).setVisible(childView == null);
 
+		return super.onPrepareOptionsMenu(menu);
 	}
 
 	/*
@@ -582,11 +572,8 @@ public abstract class SoupActivity extends DroidGap {
 			return true;
 		}
 		case R.id.global_refresh: {
-			if (childView != null) {
-				childView.reload();
-			} else {
-				appView.reload();
-			}
+			appView.stopLoading();
+			appView.reload();
 
 			return true;
 		}
@@ -618,7 +605,8 @@ public abstract class SoupActivity extends DroidGap {
 					.setNegativeButton(android.R.string.cancel,
 							new DialogInterface.OnClickListener() {
 								public void onClick(DialogInterface dialog, int id) {
-									Toast.makeText(SoupActivity.this, "Logout cancelled", Toast.LENGTH_SHORT).show();
+									Toast.makeText(SoupActivity.this, "Logout cancelled",
+											Toast.LENGTH_SHORT).show();
 								}
 							});
 			;

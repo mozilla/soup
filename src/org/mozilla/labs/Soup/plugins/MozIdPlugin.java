@@ -103,8 +103,9 @@ public class MozIdPlugin extends Plugin {
 
 				public void run() {
 
-					ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email", true, false);
-					
+					ProgressDialog dlg = ProgressDialog.show(ctx, null,
+							"Verifying email", true, true);
+
 					String verifiedEmail = SoupClient.verifyId(ctx, assertion, audience);
 
 					Log.d(TAG, "preVerify verified " + verifiedEmail + " from "
@@ -120,25 +121,28 @@ public class MozIdPlugin extends Plugin {
 							}
 						} catch (JSONException e) {
 						}
+						
+						((SoupApplication) ctx.getApplication()).triggerSync();
+						
 					} else {
 						assertions.remove(audience);
 						prefs.edit().putString("assertions", assertions.toString())
 								.commit();
 					}
-					
+
 					Log.d(TAG, "preVerify returns " + event);
-					
+
 					dlg.dismiss();
 
 					success(new PluginResult(Status.OK, event), callbackId);
 				}
 			});
-			
+
 			PluginResult result = new PluginResult(Status.NO_RESULT);
 			result.setKeepCallback(true);
 			return result;
 		}
-		
+
 		Log.d(TAG, "preVerify returns " + event);
 
 		return new PluginResult(Status.OK, event);
@@ -151,13 +155,13 @@ public class MozIdPlugin extends Plugin {
 			ctx.runOnUiThread(new Runnable() {
 
 				public void run() {
-					Toast.makeText(ctx, "Login failed (no assertion)", Toast.LENGTH_SHORT)
-							.show();
+					Toast.makeText(ctx, "Login seems cancelled. Try again?",
+							Toast.LENGTH_SHORT).show();
 				}
 
 			});
 
-			return new PluginResult(Status.OK);
+			return new PluginResult(Status.OK, false);
 		}
 
 		final String audience = data.optString(0);
@@ -167,7 +171,8 @@ public class MozIdPlugin extends Plugin {
 
 			public void run() {
 
-				ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email", true, false);
+				ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email",
+						true, true);
 
 				final String verifiedEmail = SoupClient.verifyId(ctx, assertion,
 						audience);
@@ -175,10 +180,10 @@ public class MozIdPlugin extends Plugin {
 				Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience
 						+ " using " + assertion);
 
-				SharedPreferences prefs = PreferenceManager
-						.getDefaultSharedPreferences(ctx);
-
 				if (verifiedEmail != null) {
+
+					SharedPreferences prefs = PreferenceManager
+							.getDefaultSharedPreferences(ctx);
 
 					// Save assertions to preferences
 					JSONObject assertions = null;
@@ -196,21 +201,24 @@ public class MozIdPlugin extends Plugin {
 					if (!verifiedEmail.equals(prefs.getString("email", null))) {
 						prefs.edit().putString("email", verifiedEmail).commit();
 
-						ctx.runOnUiThread(new Runnable() {
-
-							public void run() {
-								Toast.makeText(ctx, "Remembered login for " + verifiedEmail,
-										Toast.LENGTH_SHORT).show();
-							}
-						});
+						Toast.makeText(ctx, "Remembered login for " + verifiedEmail,
+								Toast.LENGTH_SHORT).show();
 					}
-					
+
 					dlg.dismiss();
 
-					success(new PluginResult(Status.OK, 0), callbackId);
-
 					((SoupApplication) ctx.getApplication()).triggerSync();
+
+					success(new PluginResult(Status.OK, assertion), callbackId);
+				} else {
+					dlg.dismiss();
+
+					Toast.makeText(ctx, "Verification failed, try to refresh!",
+							Toast.LENGTH_SHORT);
+
+					success(new PluginResult(Status.OK, false), callbackId);
 				}
+
 			}
 		});
 

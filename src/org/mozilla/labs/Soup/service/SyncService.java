@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.os.ResultReceiver;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.Toast;
 
 public class SyncService extends IntentService {
 
@@ -81,7 +80,7 @@ public class SyncService extends IntentService {
 		try {
 
 			if (!SoupClient.authorize(this)) {
-				new Exception("User not authorized.");
+				throw new Exception("Current user is not authorized.");
 			}
 			
 			/**
@@ -199,7 +198,7 @@ public class SyncService extends IntentService {
 				updatedUntil = SoupClient.updateApps(ctx, serverUpdates, until);
 				
 				if (updatedUntil < 1) {
-					new Exception("Update failed for " + serverUpdates);
+					throw new Exception("Update failed for " + serverUpdates);
 				}
 			}
 			

@@ -138,7 +138,7 @@ public class SoupClient {
 			final int status = resp.getStatusLine().getStatusCode();
 			if (status != HttpStatus.SC_OK) {
 				resp.getEntity().consumeContent();
-				
+
 				throw new Exception("Unexpected server response "
 						+ resp.getStatusLine() + " for " + ident);
 			}
@@ -150,7 +150,8 @@ public class SoupClient {
 				// TODO: Make thread-safe (as it is used in a service)
 				return new JSONObject(body);
 			} catch (Exception e) {
-				throw new Exception("Malformed JSON response for " + ident + ": " + body, e);
+				throw new Exception("Malformed JSON response for " + ident + ": "
+						+ body, e);
 			}
 		} catch (Exception e) {
 			throw e;
@@ -261,18 +262,21 @@ public class SoupClient {
 		String audience = syncUri.getScheme() + "://" + syncUri.getAuthority();
 
 		String assertion = null;
+		JSONObject assertions = null;
 		try {
-			assertion = new JSONObject(prefs.getString("assertions",
-					new JSONObject().toString())).optString(audience);
+			assertions = new JSONObject(prefs.getString("assertions",
+					new JSONObject().toString()));
+
+			assertion = assertions.optString(audience);
 		} catch (JSONException e) {
 		}
 
-		if (assertion == null) {
+		if (assertions == null || assertion == null) {
 			Log.w(TAG, "Missing assertion for " + audience);
 			return false;
 		}
 
-		Log.d(TAG, "Authenticate for " + audience);
+		Log.d(TAG, "Trying to authenticate for " + audience);
 
 		// Make request
 
@@ -286,7 +290,11 @@ public class SoupClient {
 		try {
 			response = executePost(ctx, url, params, null);
 		} catch (Exception e) {
-			Log.w(TAG, "Could not execute request", e);
+			// Remove assertion to prevent further 401s
+			assertions.remove(audience);
+			prefs.edit().putString("assertions", assertions.toString()).commit();
+
+			Log.w(TAG, "Authorization request failed", e);
 			return false;
 		}
 
@@ -320,15 +328,14 @@ public class SoupClient {
 		}
 	}
 
-	public static long updateApps(Context ctx, JSONArray collection,
-			long since) {
+	public static long updateApps(Context ctx, JSONArray collection, long since) {
 		if (!authorize(ctx)) {
 			return 0;
 		}
-		
+
 		Uri.Builder builder = Uri.parse(authorization.optString("collection_url"))
 				.buildUpon();
-//		builder.appendQueryParameter("lastget", String.valueOf(since));
+		// builder.appendQueryParameter("lastget", String.valueOf(since));
 		String url = builder.build().toString();
 
 		JSONObject response = null;
@@ -338,7 +345,7 @@ public class SoupClient {
 		} catch (Exception e) {
 			Log.w(TAG, "updateApps failed for " + url, e);
 		}
-		
+
 		Log.d(TAG, "updateApps returned " + response);
 
 		if (response == null || !response.has("received")) {
@@ -351,10 +358,11 @@ public class SoupClient {
 	public static String verifyId(Context ctx, String assertion, String audience) {
 
 		if (TextUtils.isEmpty(assertion) || TextUtils.isEmpty(audience)) {
-			Log.d(TAG, "verifyId missing audience: " + audience + " or assertion: " + assertion);
+			Log.d(TAG, "verifyId missing audience: " + audience + " or assertion: "
+					+ assertion);
 			return null;
 		}
-		
+
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(ctx);
 		Uri.Builder builder = Uri.parse(
@@ -389,9 +397,8 @@ public class SoupClient {
 		return email;
 	}
 
-
 	public static JSONObject getManifest(Context ctx, String manifestUri) {
-		
+
 		try {
 			return executeGet(ctx, manifestUri, null);
 		} catch (Exception e) {
