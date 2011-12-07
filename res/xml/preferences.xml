@@ -52,7 +52,7 @@
                 android:entryValues="@array/store_values"
                 android:key="dev_store"
                 android:summary="Select your preferred store"
-                android:title="Store Provider" />
+                android:title="Market Provider" />
 
             <ListPreference
                 android:defaultValue="@string/identity_default"

@@ -19,10 +19,6 @@ public class StoreActivity extends SoupActivity {
 
 		final Intent intent = getIntent();
 
-		// if (Intent.ACTION_VIEW.equals(action)) {
-		// Toast.makeText(StoreActivity.this, "TODO: Open app store detail view", Toast.LENGTH_SHORT).show();
-		// }
-
 		// Init web views
 
 		// Allow overriding the Store with an new landing page

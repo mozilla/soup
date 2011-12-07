@@ -59,7 +59,7 @@ soup.App = (function() {
 		container.innerHTML = '';
 		
 		if (!list || !list.length) {
-			container.innerHTML = 'No apps installed!';
+			container.innerHTML = 'No local apps, watching for sync updates …';
 			return;
 		}
 		
@@ -68,21 +68,6 @@ soup.App = (function() {
 			app.render(container);
 		});
 		
-		// login button
-		
-		var login = document.getElementById('btn-login');
-		
-		if (login) {
-			login.addEventListener('click', function(evt) {
-				evt.preventDefault();
-				
-				navigator.id.getVerifiedEmail(function(assertion) {
-					navigator.notification.alert('Thanks for logging in!');
-					
-					login.style.display = 'none';
-				});
-			}, false);
-		}
 	}
 	
 	return App;
@@ -91,39 +76,38 @@ soup.App = (function() {
 
 document.addEventListener('deviceready', function() {
 
-	console.log("navigator.id.getVerifiedEmail");
-	
-	navigator.id.getVerifiedEmail(function(assertion) {
+	function verify() {
 		
-		navigator.mozApps.mgmt.list(soup.App.renderList);
+		console.log('navigator.id.getVerifiedEmail START');
 		
-		navigator.mozApps.mgmt.watchUpdates(soup.App.renderList);
-	});
+		navigator.id.getVerifiedEmail(function(assertion) {
+		
+			console.log('navigator.id.getVerifiedEmail DONE');
+			console.log(assertion);
+		
+			if (assertion && typeof assertion == 'string') {
+				navigator.mozApps.mgmt.list(soup.App.renderList);
+				navigator.mozApps.mgmt.watchUpdates(soup.App.renderList);
+			} else {
+				var container = document.getElementById('myapps');
+				container.getElementsByTagName('em')[0].innerHTML = 'Try sign in again!';
+			}
+			
+		});
+	}
 	
-
-	// var apps = document.getElementsByClassName("app");
-	// for (var i = 0; i < apps.length; i++) {
-	    // var app = apps[i];
-	    // var manifest = app.getAttribute("data-manifest");
-
-	    // function makeInstallFunc(appSpan, manifest)
-	    // {
-	        // return function() {
-	            // navigator.mozApps.install(
-	                // manifest,
-	                // {},
-	                // function(done) {
-	                    // appSpan.style.display = "none";
-	                // },
-	                // function(err) {
-	                    // alert("Oh no, there was an error " + err);
-	                // }
-	            // );
-	        // }
-	    // };
-	    // app.onclick = makeInstallFunc(app, manifest);
-	// }
-
+	var login = document.getElementById('btn-login');
+		
+	if (login) {
+		login.addEventListener('click', function(evt) {
+			evt.preventDefault();
+			
+			verify();
+		}, false);
+	}
+	
+	verify();
+	
 }, false);
 
 })(this);
