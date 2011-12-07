@@ -85,7 +85,7 @@ document.addEventListener('deviceready', function() {
 			console.log('navigator.id.getVerifiedEmail DONE');
 			console.log(assertion);
 		
-			if (assertion && typeof assertion == 'string') {
+			if (assertion) {
 				navigator.mozApps.mgmt.list(soup.App.renderList);
 				navigator.mozApps.mgmt.watchUpdates(soup.App.renderList);
 			} else {
