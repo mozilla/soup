@@ -174,48 +174,52 @@ public final class AppsContract {
 			String origin = app.optString("origin");
 			JSONObject manifest = app.optJSONObject("manifest");
 
-			if (manifest == null || origin == null) {
+			if (origin == null) {
+				Log.w(TAG, "Origin was null");
 				return null;
 			}
 
 			ContentValues values = new ContentValues();
 
-			values.put(Apps.NAME, manifest.optString("name"));
-			values.put(Apps.DESCRIPTION, manifest.optString("description"));
-
-			Bitmap icon = null;
-			JSONObject icons = manifest.optJSONObject("icons");
-
-			if (icons != null && icons.length() > 0) {
-				JSONArray sizes = icons.names();
-
-				List<Integer> sizesSort = new ArrayList<Integer>();
-				for (int i = 0, l = sizes.length(); i < l; i++) {
-					sizesSort.add(sizes.optInt(i));
+			if (manifest != null) {
+				values.put(Apps.NAME, manifest.optString("name"));
+				values.put(Apps.DESCRIPTION, manifest.optString("description"));
+				
+				Bitmap icon = null;
+				JSONObject icons = manifest.optJSONObject("icons");
+				
+				if (icons != null && icons.length() > 0) {
+					JSONArray sizes = icons.names();
+					
+					List<Integer> sizesSort = new ArrayList<Integer>();
+					for (int i = 0, l = sizes.length(); i < l; i++) {
+						sizesSort.add(sizes.optInt(i));
+					}
+					String max = Collections.max(sizesSort).toString();
+					
+					String iconUrl = origin + icons.optString(max);
+					icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
 				}
-				String max = Collections.max(sizesSort).toString();
-
-				String iconUrl = origin + icons.optString(max);
-				icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
+				
+				if (icon != null) {
+					values.put(Apps.ICON, ImageFactory.bitmapToBytes(icon));
+				} else {
+					Log.w(TAG, "Could not load icon from " + icons);
+				}
+				
+				values.put(Apps.MANIFEST_URL, app.optString("manifest_url"));
+				values.put(Apps.MANIFEST, manifest.toString());
 			}
-
-			if (icon != null) {
-				values.put(Apps.ICON, ImageFactory.bitmapToBytes(icon));
-			} else {
-				Log.w(TAG, "Could not load icon from " + icons);
-			}
-
+			
+			
 			values.put(Apps.ORIGIN, origin);
-			values.put(Apps.MANIFEST_URL, app.optString("manifest_url"));
-			values.put(Apps.MANIFEST, manifest.toString());
 
 			long installTime = app.optLong("install_time");
-			if (installTime > 0) {
+			if (installTime < 1) {
 				installTime = Long.valueOf(System.currentTimeMillis() / 1000);
 			}
 			values.put(Apps.INSTALL_TIME, installTime * 1000);
 
-			JSONObject installData = null;
 
 			if (app.optBoolean("deleted")) {
 				values.put(Apps.STATUS, STATUS_ENUM.DELETED.ordinal());
@@ -223,6 +227,7 @@ public final class AppsContract {
 				values.put(Apps.STATUS, STATUS_ENUM.OK.ordinal());
 			}
 
+			JSONObject installData = null;
 			try {
 				installData = new JSONObject(app.optString("install_data"));
 			} catch (Exception e) {
@@ -233,6 +238,8 @@ public final class AppsContract {
 				if (installData.has("receipt")) {
 					values.put(Apps.INSTALL_RECEIPT, installData.optString("receipt"));
 				}
+			} else {
+				values.put(Apps.INSTALL_DATA, new JSONObject().toString());
 			}
 
 			return values;
