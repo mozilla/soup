@@ -16,7 +16,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
-import org.mozilla.labs.Soup.service.SoupClient;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -126,7 +125,7 @@ public class ImageFactory {
 		}
 
 		try {
-			final HttpClient httpClient = SoupClient.getHttpClient(context.getApplicationContext());
+			final HttpClient httpClient = HttpFactory.getHttpClient(context.getApplicationContext());
 			final HttpResponse resp = httpClient.execute(new HttpGet(url));
 			final HttpEntity entity = resp.getEntity();
 
