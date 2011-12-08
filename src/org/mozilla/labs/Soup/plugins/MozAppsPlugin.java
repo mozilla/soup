@@ -12,8 +12,8 @@ import org.mozilla.labs.Soup.R;
 import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.http.ImageFactory;
+import org.mozilla.labs.Soup.http.HttpFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
-import org.mozilla.labs.Soup.service.SoupClient;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -119,7 +119,7 @@ public class MozAppsPlugin extends Plugin {
                         true);
 
                 // TODO: More error codes (JSON vs IO)
-                JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
+                JSONObject manifest = HttpFactory.getManifest(ctx, manifestUri);
 
                 Log.d(TAG, "Parsed manifest: " + manifest);
 

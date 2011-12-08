@@ -6,7 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.app.SoupApplication;
-import org.mozilla.labs.Soup.service.SoupClient;
+import org.mozilla.labs.Soup.http.HttpFactory;
 
 import android.app.ProgressDialog;
 import android.content.SharedPreferences;
@@ -106,7 +106,7 @@ public class MozIdPlugin extends Plugin {
 					ProgressDialog dlg = ProgressDialog.show(ctx, null,
 							"Verifying email", true, true);
 
-					String verifiedEmail = SoupClient.verifyId(ctx, assertion, audience);
+					String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
 
 					Log.d(TAG, "preVerify verified " + verifiedEmail + " from "
 							+ assertion);
@@ -174,7 +174,7 @@ public class MozIdPlugin extends Plugin {
 				ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email",
 						true, true);
 
-				final String verifiedEmail = SoupClient.verifyId(ctx, assertion,
+				final String verifiedEmail = HttpFactory.verifyId(ctx, assertion,
 						audience);
 
 				Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience

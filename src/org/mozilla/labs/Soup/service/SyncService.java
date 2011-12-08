@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mozilla.labs.Soup.app.LauncherActivity;
+import org.mozilla.labs.Soup.http.HttpFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 import android.R;
@@ -79,7 +80,7 @@ public class SyncService extends IntentService {
 		
 		try {
 
-			if (!SoupClient.authorize(this)) {
+			if (!HttpFactory.authorize(this)) {
 				throw new Exception("Current user is not authorized.");
 			}
 			
@@ -110,7 +111,7 @@ public class SyncService extends IntentService {
 			 * Server list
 			 */
 
-			JSONObject response = SoupClient.getAllApps(this, localSince);
+			JSONObject response = HttpFactory.getAllApps(this, localSince);
 
 			Log.d(TAG, "List: " + response);
 
@@ -195,7 +196,7 @@ public class SyncService extends IntentService {
 			long updatedUntil = until;
 			
 			if (serverUpdates.length() > 0) {
-				updatedUntil = SoupClient.updateApps(ctx, serverUpdates, until);
+				updatedUntil = HttpFactory.updateApps(ctx, serverUpdates, until);
 				
 				if (updatedUntil < 1) {
 					throw new Exception("Update failed for " + serverUpdates);
