@@ -1,3 +1,4 @@
+
 package org.mozilla.labs.Soup.plugins;
 
 import java.util.ArrayList;
@@ -34,255 +35,264 @@ import com.phonegap.api.PluginResult.Status;
 
 public class MozAppsPlugin extends Plugin {
 
-	private static final String TAG = "MozAppsPlugin";
+    private static final String TAG = "MozAppsPlugin";
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.phonegap.api.Plugin#execute(java.lang.String, org.json.JSONArray, java.lang.String)
-	 */
-	@Override
-	public PluginResult execute(String action, JSONArray data, String callback) {
-		Log.d(TAG, "Called " + action + ": " + data);
+    /*
+     * (non-Javadoc)
+     * @see com.phonegap.api.Plugin#execute(java.lang.String,
+     * org.json.JSONArray, java.lang.String)
+     */
+    @Override
+    public PluginResult execute(String action, JSONArray data, String callback) {
+        Log.d(TAG, "Called " + action + ": " + data);
 
-		Uri originUri = Uri.parse(data.optString(0, webView.getUrl()));
-		String origin = originUri.getScheme() + "://" + originUri.getAuthority();
+        Uri originUri = Uri.parse(data.optString(0, webView.getUrl()));
+        String origin = originUri.getScheme() + "://" + originUri.getAuthority();
 
-		Cursor cur = Apps.findAppByOrigin(ctx, origin);
+        Cursor cur = Apps.findAppByOrigin(ctx, origin);
 
-		try {
+        try {
 
-			if (action.equals("install")) {
+            if (action.equals("install")) {
 
-				if (cur != null) {
+                if (cur != null) {
 
-					// TODO: Update install_data
+                    if (cur.getInt(cur.getColumnIndex(Apps.STATUS)) != Apps.STATUS_ENUM.DELETED
+                            .ordinal()) {
+                        // TODO: Update install_data
 
-					final JSONObject app = Apps.toJSONObject(cur);
+                        final JSONObject app = Apps.toJSONObject(cur);
 
-					Log.d(TAG, "App was installed: " + app);
+                        Log.d(TAG, "App was installed: " + app);
 
-					ctx.runOnUiThread(new Runnable() {
-						public void run() {
-							Toast.makeText(ctx,
-									app.optJSONObject("manifest").optString("name") + " updated",
-									Toast.LENGTH_SHORT).show();
-						}
-					});
+                        ctx.runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(
+                                        ctx,
+                                        app.optJSONObject("manifest").optString("name")
+                                                + " updated", Toast.LENGTH_SHORT).show();
+                            }
+                        });
 
-					return new PluginResult(Status.OK, app);
-				}
+                        return new PluginResult(Status.OK, app);
+                    }
 
-				return install(callback, originUri.toString(), data.optJSONObject(1),
-						origin);
+                }
 
-			} else if (action.equals("amInstalled")) {
+                return install(callback, originUri.toString(), data.optJSONObject(1), origin, cur);
 
-				if (cur != null) {
-					JSONObject app = Apps.toJSONObject(cur);
+            } else if (action.equals("amInstalled")) {
 
-					if (app != null) {
-						return new PluginResult(Status.OK, app);
-					}
+                if (cur != null) {
+                    JSONObject app = Apps.toJSONObject(cur);
 
-					return new PluginResult(Status.ERROR);
-				}
+                    if (app != null) {
+                        return new PluginResult(Status.OK, app);
+                    }
 
-				return new PluginResult(Status.ERROR);
-			}
+                    return new PluginResult(Status.ERROR);
+                }
 
-		} catch (Exception e) {
-			Log.w(TAG, action + " failed", e);
-			return new PluginResult(Status.JSON_EXCEPTION);
-		}
+                return new PluginResult(Status.ERROR);
+            }
 
-		if (cur != null) {
-			cur.close();
-		}
+        } catch (Exception e) {
+            Log.w(TAG, action + " failed", e);
+            return new PluginResult(Status.JSON_EXCEPTION);
+        }
 
-		return new PluginResult(Status.INVALID_ACTION);
-	}
+        if (cur != null) {
+            cur.close();
+        }
 
-	public PluginResult install(final String callbackId,
-			final String manifestUri, final JSONObject install_data,
-			final String origin) throws Exception {
+        return new PluginResult(Status.INVALID_ACTION);
+    }
 
-		ctx.runOnUiThread(new Runnable() {
+    public PluginResult install(final String callbackId, final String manifestUri,
+            final JSONObject install_data, final String origin, final Cursor cur) throws Exception {
 
-			public void run() {
+        ctx.runOnUiThread(new Runnable() {
 
-				ProgressDialog dlg = ProgressDialog.show(ctx, null,
-						"Preparing installation", true, true);
+            public void run() {
 
-				// TODO: More error codes (JSON vs IO)
-				JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
+                ProgressDialog dlg = ProgressDialog.show(ctx, null, "Preparing installation", true,
+                        true);
 
-				Log.d(TAG, "Parsed manifest: " + manifest);
+                // TODO: More error codes (JSON vs IO)
+                JSONObject manifest = SoupClient.getManifest(ctx, manifestUri);
 
-				if (manifest == null) {
-					dlg.dismiss();
+                Log.d(TAG, "Parsed manifest: " + manifest);
 
-					JSONObject errorEvent = null;
-					try {
-						errorEvent = new JSONObject().put("code", "networkError").put("message", "networkError");
-					} catch (JSONException e) {
-					}
-					error(new PluginResult(Status.ERROR, errorEvent), callbackId);
+                if (manifest == null) {
+                    dlg.dismiss();
 
-					return;
-				}
+                    JSONObject errorEvent = null;
+                    try {
+                        errorEvent = new JSONObject().put("code", "networkError").put("message",
+                                "networkError");
+                    } catch (JSONException e) {
+                    }
+                    error(new PluginResult(Status.ERROR, errorEvent), callbackId);
 
-				final ContentValues values = new ContentValues();
+                    return;
+                }
 
-				final String name = manifest.optString("name", "No Name");
-				final String description = manifest.optString("description", "");
-				values.put(Apps.NAME, name);
-				values.put(Apps.DESCRIPTION, description);
+                final ContentValues values = new ContentValues();
 
-				Bitmap icon = null;
-				JSONObject icons = manifest.optJSONObject("icons");
+                final String name = manifest.optString("name", "No Name");
+                final String description = manifest.optString("description", "");
+                values.put(Apps.NAME, name);
+                values.put(Apps.DESCRIPTION, description);
 
-				if (icons != null && icons.length() > 0) {
-					JSONArray sizes = icons.names();
+                Bitmap icon = null;
+                JSONObject icons = manifest.optJSONObject("icons");
 
-					List<Integer> sizesSort = new ArrayList<Integer>();
-					for (int i = 0, l = sizes.length(); i < l; i++) {
-						sizesSort.add(sizes.optInt(i));
-					}
-					String max = Collections.max(sizesSort).toString();
-					
-					String iconUrl = origin + icons.optString(max);
-					
-					Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
-					
-					icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
-				}
+                if (icons != null && icons.length() > 0) {
+                    JSONArray sizes = icons.names();
 
-				final Bitmap bitmap = icon;
+                    List<Integer> sizesSort = new ArrayList<Integer>();
+                    for (int i = 0, l = sizes.length(); i < l; i++) {
+                        sizesSort.add(sizes.optInt(i));
+                    }
+                    String max = Collections.max(sizesSort).toString();
 
-				if (bitmap != null) {
-					values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
-				} else {
-					Log.w(TAG, "Could not load icon from " + icons);
-				}
+                    String iconUrl = origin + icons.optString(max);
 
-				values.put(Apps.ORIGIN, origin);
-				values.put(Apps.MANIFEST_URL, manifestUri);
-				values.put(Apps.MANIFEST, manifest.toString());
+                    Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
 
-				if (install_data != null) {
-					values.put(Apps.INSTALL_DATA, install_data.toString());
+                    icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
+                }
 
-					if (install_data.has("receipt")) {
-						values.put(Apps.INSTALL_RECEIPT, install_data.optString("receipt"));
-					}
-				}
+                final Bitmap bitmap = icon;
 
-				final String launchUri = origin + manifest.optString("launch_path", "");
+                if (bitmap != null) {
+                    values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
+                } else {
+                    Log.w(TAG, "Could not load icon from " + icons);
+                }
 
-				SharedPreferences prefs = PreferenceManager
-						.getDefaultSharedPreferences(ctx);
+                values.put(Apps.ORIGIN, origin);
+                values.put(Apps.MANIFEST_URL, manifestUri);
+                values.put(Apps.MANIFEST, manifest.toString());
 
-				final boolean[] appSettings = new boolean[] {
-						prefs.getBoolean("install_shortcut", true),
-						prefs.getBoolean("install_launch", true) };
+                if (install_data != null) {
+                    values.put(Apps.INSTALL_DATA, install_data.toString());
 
-				dlg.dismiss();
+                    if (install_data.has("receipt")) {
+                        values.put(Apps.INSTALL_RECEIPT, install_data.optString("receipt"));
+                    }
+                }
 
-				AlertDialog.Builder installDlg = new AlertDialog.Builder(ctx);
+                final String launchUri = origin + manifest.optString("launch_path", "");
 
-				installDlg
-						.setTitle("Install " + name + "?")
-						.setMultiChoiceItems(R.array.install_dialog_array, appSettings,
-								new DialogInterface.OnMultiChoiceClickListener() {
-									public void onClick(DialogInterface dialog, int whichButton,
-											boolean isChecked) {
-										appSettings[whichButton] = isChecked;
-									}
-								}).setCancelable(true);
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
-				if (bitmap != null) {
-					installDlg.setIcon(new BitmapDrawable(bitmap));
-				}
+                final boolean[] appSettings = new boolean[] {
+                        prefs.getBoolean("install_shortcut", true),
+                        prefs.getBoolean("install_launch", true)
+                };
 
-				installDlg.setNegativeButton(android.R.string.cancel,
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int which) {
+                dlg.dismiss();
 
-								JSONObject errorEvent = null;
-								try {
-									errorEvent = new JSONObject().put("code", "denied").put(
-											"message", "denied");
-								} catch (JSONException e) {
-								}
-								error(new PluginResult(Status.ERROR, errorEvent), callbackId);
+                AlertDialog.Builder installDlg = new AlertDialog.Builder(ctx);
 
-							}
-						}).setPositiveButton(android.R.string.ok,
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int which) {
+                installDlg
+                        .setTitle("Install " + name + "?")
+                        .setMultiChoiceItems(R.array.install_dialog_array, appSettings,
+                                new DialogInterface.OnMultiChoiceClickListener() {
+                                    public void onClick(DialogInterface dialog, int whichButton,
+                                            boolean isChecked) {
+                                        appSettings[whichButton] = isChecked;
+                                    }
+                                }).setCancelable(true);
 
-								final Uri uri = ctx.getContentResolver().insert(
-										Apps.CONTENT_URI, values);
+                if (bitmap != null) {
+                    installDlg.setIcon(new BitmapDrawable(bitmap));
+                }
 
-								if (uri == null) {
-									JSONObject errorEvent = null;
-									try {
-										errorEvent = new JSONObject().put("code", "denied").put(
-												"message", "denied");
-									} catch (JSONException e) {
-									}
-									error(new PluginResult(Status.ERROR, errorEvent), callbackId);
+                installDlg.setNegativeButton(android.R.string.cancel,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
 
-									return;
-								}
+                                JSONObject errorEvent = null;
+                                try {
+                                    errorEvent = new JSONObject().put("code", "denied").put(
+                                            "message", "denied");
+                                } catch (JSONException e) {
+                                }
+                                error(new PluginResult(Status.ERROR, errorEvent), callbackId);
 
-								success(new PluginResult(Status.OK, 0), callbackId);
+                            }
+                        }).setPositiveButton(android.R.string.ok,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
 
-								Intent shortcutIntent = new Intent(ctx, AppActivity.class);
-								shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
-								shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-								shortcutIntent.putExtra("uri", launchUri);
-								shortcutIntent.putExtra("app_uri", uri);
+                                if (cur != null) {
+                                    values.put(Apps.STATUS, Apps.STATUS_ENUM.OK.ordinal());
+                                }
 
-								// TODO: Move one more place to sync
-								((SoupApplication) ctx.getApplication()).triggerSync();
+                                final Uri uri = ctx.getContentResolver().insert(Apps.CONTENT_URI,
+                                        values);
 
-								if (appSettings[0]) {
-									Log.d(TAG, "Install creates shortcut");
-									
-									Intent intent = new Intent();
-									intent
-											.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
-									intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-									intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
-									if (bitmap != null) {
-										intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
-									}
-									// Disallow the creation of duplicate shortcuts (i.e. same
-									// url, same title, but different screen position).
-									intent.putExtra("duplicate", false);
+                                if (uri == null) {
+                                    JSONObject errorEvent = null;
+                                    try {
+                                        errorEvent = new JSONObject().put("code", "denied").put(
+                                                "message", "denied");
+                                    } catch (JSONException e) {
+                                    }
+                                    error(new PluginResult(Status.ERROR, errorEvent), callbackId);
 
-									ctx.sendBroadcast(intent);
-								}
+                                    return;
+                                }
 
-								if (appSettings[1]) {
-									Log.d(TAG, "Install launches app");
-									
-									ctx.startActivity(shortcutIntent);
-								}
+                                success(new PluginResult(Status.OK, 0), callbackId);
 
-							}
-						});
+                                Intent shortcutIntent = new Intent(ctx, AppActivity.class);
+                                shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
+                                shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                shortcutIntent.putExtra("uri", launchUri);
+                                shortcutIntent.putExtra("app_uri", uri);
 
-				installDlg.create();
-				installDlg.show();
-			}
-		});
+                                // TODO: Move one more place to sync
+                                ((SoupApplication)ctx.getApplication()).triggerSync();
 
-		PluginResult result = new PluginResult(Status.NO_RESULT);
-		result.setKeepCallback(true);
-		return result;
-	}
+                                if (appSettings[0]) {
+                                    Log.d(TAG, "Install creates shortcut");
+
+                                    Intent intent = new Intent();
+                                    intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+                                    intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+                                    intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+                                    if (bitmap != null) {
+                                        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
+                                    }
+                                    // Disallow the creation of duplicate
+                                    // shortcuts (i.e. same
+                                    // url, same title, but different screen
+                                    // position).
+                                    intent.putExtra("duplicate", false);
+
+                                    ctx.sendBroadcast(intent);
+                                }
+
+                                if (appSettings[1]) {
+                                    Log.d(TAG, "Install launches app");
+
+                                    ctx.startActivity(shortcutIntent);
+                                }
+
+                            }
+                        });
+
+                installDlg.create();
+                installDlg.show();
+            }
+        });
+
+        PluginResult result = new PluginResult(Status.NO_RESULT);
+        result.setKeepCallback(true);
+        return result;
+    }
 
 }
