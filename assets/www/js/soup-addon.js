@@ -163,7 +163,7 @@
 					
 					// User has an email, so we just get a new assertion
 					BrowserID.internal.setPersistent(origin, function() {
-						BrowserID.internal.get(origin, cb, {requiredEmail: data.email, silent: true});
+						BrowserID.internal.get(data.audience, cb, {requiredEmail: data.email, silent: true});
 					});
 					
 				} else {
@@ -171,7 +171,7 @@
 					// User has no email provided yet, the dialog needs to do the
 					// full flow
 					BrowserID.internal.setPersistent(origin, function() {
-						BrowserID.internal.get(origin, cb, {silent: false});
+						BrowserID.internal.get(data.audience, cb, {silent: false});
 					});
 
 				}
