@@ -32,6 +32,10 @@ public class SoupApplication extends Application {
 		 */
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
+        // FIXME: Remove this debug code.
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.edit().putString("dev_identity", "http://10.250.4.123:10002").commit();
+
 		syncManager = new SyncManager();
 	}
 
