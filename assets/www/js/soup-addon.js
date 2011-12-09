@@ -42,7 +42,7 @@
 	
 	(function bridgeId() {
 
-		id.getVerifiedEmail = function(callback) {
+		id.get = id.getVerifiedEmail = function(callback, options) {
 			
 			promise(function() {
 				
@@ -80,7 +80,7 @@
 							timer = null;
 						}
 			
-						if (evt.origin != origin || !popup)
+						if (evt.origin != origin || evt.data === false || !popup)
 							return;
 						
 						window.removeEventListener('message', onmessage, false);
@@ -124,72 +124,73 @@
 		
 		// TODO: Filter to pop up!
 
-		var channel = (id.channel = id.channel || {});
-
-		channel.registerController = function(controller) {
+		function ready() {
+			if (!('BrowserID' in window) || !('internal' in BrowserID)) {
+				console.log('bridgeIdChannel FAILED for ' + location);
+				return;
+			}
 			
-			console.log("getVerifiedEmail channel.registerController started");
+			if (!ready) return;
+			ready = null;
+			
+			console.log("getVerifiedEmail ready");
 			
 			var origin, fired;
-
+			
 			window.addEventListener('message', function(evt) {
 				evt.stopPropagation();
 				
 				if (origin) return;
 				
 				var data = JSON.parse(evt.data);
-				origin = data.origin;
+					
+				origin = data.origin
 				
 				console.log("getVerifiedEmail received first postMessage with " + evt.data);
+				opener.postMessage(false, origin); // this stops further awake calls from the window
 				
 				var cb = function(assertion) {
 					if (fired) return;
 					fired = true;
 					
-					console.log("getVerifiedEmail received callback with assertion: " + (assertion != null));
+					console.log("getVerifiedEmail posting assertion (" + (assertion !== null) + ") back to " + origin);
 					
-					opener.postMessage(assertion, origin);
+					opener.postMessage(assertion || null, origin);
 				};
 				
-				if (data.email && 'BrowserID' in window && 'User' in BrowserID) {
-					console.log("getVerifiedEmail using BrowserID.User for " + data.email);
+				
+				if (data.email) {
 					
-					BrowserID.User.setOrigin(data.audience);
-					
-					/*
-					BrowserID.User.syncEmailKeypair(data.email, function() {
-						BrowserID.User.getAssertion(data.email, cb, cb);
-					}, function() {
-						cb();
+					// User has an email, so we just get a new assertion
+					BrowserID.internal.setPersistent(origin, function() {
+						BrowserID.internal.get(origin, cb, {requiredEmail: data.email, silent: true});
 					});
-					*/
-					
-					BrowserID.User.getAssertion(data.email, cb, cb);
 					
 				} else {
-					console.log("getVerifiedEmail using controller.getVerifiedEmail " + data.audience);
 					
-					controller.getVerifiedEmail(data.audience, cb, cb);
+					// User has no email provided yet, the dialog needs to do the
+					// full flow
+					BrowserID.internal.setPersistent(origin, function() {
+						BrowserID.internal.get(origin, cb, {silent: false});
+					});
+
 				}
 				
 			}, false);
 
 		};
 		
-		var controller = '$' in window && $('body').controller && $('body').controller('dialog');
-		// Script might got injected after load
-		if (controller) {
-			console.log("getVerifiedEmail channel.registerController restarted");
-			
-			// added via stomlinson
-			try {
-				controller.stateMachine();
-				console.log("getVerifiedEmail stateMachine success");
-			} catch (e) {
-				console.log("getVerifiedEmail stateMachine failed " + e);
-			}
-			
-			channel.registerController(controller);
+		if (!('$' in window)) return;
+		
+		if (document.readyState == 'complete') {
+			console.log("getVerifiedEmail INSTANT on " + location);
+			setTimeout(ready, 10);
+		} else {
+			console.log("getVerifiedEmail DOMContentLoaded on " + location);
+			window.addEventListener('load', function() {
+				console.log("getVerifiedEmail DOMContentLoaded FIRED on " + location);
+				setTimeout(ready, 10);
+			}, false);
 		}
 
 		console.log('soup-addon.js bridged *id.channel* on ' + (location.host || location));

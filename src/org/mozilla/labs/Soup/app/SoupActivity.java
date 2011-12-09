@@ -77,7 +77,7 @@ public abstract class SoupActivity extends DroidGap {
 			Log.d(TAG + ".SoupChildViewClient", "onPageStarted:  " + url);
 
 			if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
-				injectJavaScript(childView, false);
+                // injectJavaScript(childView, false);
 			}
 
 			Uri uri = Uri.parse(url);

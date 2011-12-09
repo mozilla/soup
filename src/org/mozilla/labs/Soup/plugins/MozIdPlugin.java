@@ -1,3 +1,4 @@
+
 package org.mozilla.labs.Soup.plugins;
 
 import java.net.URI;
@@ -21,210 +22,199 @@ import com.phonegap.api.PluginResult.Status;
 
 public class MozIdPlugin extends Plugin {
 
-	private static final String TAG = "MozIdPlugin";
+    private static final String TAG = "MozIdPlugin";
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.phonegap.api.Plugin#execute(java.lang.String, org.json.JSONArray, java.lang.String)
-	 */
-	@Override
-	public PluginResult execute(String action, JSONArray data, String callbackId) {
-		Log.d(TAG, "Called " + action + ": " + data);
+    /*
+     * (non-Javadoc)
+     * @see com.phonegap.api.Plugin#execute(java.lang.String,
+     * org.json.JSONArray, java.lang.String)
+     */
+    @Override
+    public PluginResult execute(String action, JSONArray data, String callbackId) {
+        Log.d(TAG, "Called " + action + ": " + data);
 
-		try {
+        try {
 
-			if (action.equals("preVerify")) {
+            if (action.equals("preVerify")) {
 
-				URI uri = new URI(webView.getUrl());
-				String audience = uri.getScheme() + "://" + uri.getHost();
+                URI uri = new URI(webView.getUrl());
+                String audience = uri.getScheme() + "://" + uri.getHost();
 
-				return preVerify(audience, callbackId);
+                return preVerify(audience, callbackId);
 
-			} else if (action.equals("postVerify")) {
+            } else if (action.equals("postVerify")) {
 
-				return postVerify(data, callbackId);
+                return postVerify(data, callbackId);
 
-			}
+            }
 
-		} catch (Exception e) {
-			Log.w(TAG, action + " failed", e);
-			return new PluginResult(Status.JSON_EXCEPTION);
-		}
+        } catch (Exception e) {
+            Log.w(TAG, action + " failed", e);
+            return new PluginResult(Status.JSON_EXCEPTION);
+        }
 
-		return new PluginResult(Status.INVALID_ACTION);
-	}
+        return new PluginResult(Status.INVALID_ACTION);
+    }
 
-	/**
-	 * preVerify
-	 * 
-	 * @param audience
-	 * @return PluginResult
-	 * @throws Exception
-	 */
-	public PluginResult preVerify(String defaultAudience, final String callbackId)
-			throws Exception {
+    /**
+     * preVerify
+     * 
+     * @param audience
+     * @return PluginResult
+     * @throws Exception
+     */
+    public PluginResult preVerify(String defaultAudience, final String callbackId) throws Exception {
 
-		final SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(ctx);
-		String urlId = prefs.getString("dev_identity", "https://browserid.org")
-				+ "/sign_in";
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String urlId = prefs.getString("dev_identity", "https://browserid.org") + "/sign_in#NATIVE";
 
-		URI identUri = new URI(urlId);
-		String identOrigin = identUri.getScheme() + "://" + identUri.getAuthority();
+        URI identUri = new URI(urlId);
+        String identOrigin = identUri.getScheme() + "://" + identUri.getAuthority();
 
-		// Fallback to sync service audience for local dashboard
-		if (new URI(defaultAudience).getScheme().equals("file")) {
-			URI syncUri = new URI(prefs.getString("dev_sync",
-					"https://myapps.mozillalabs.com"));
-			defaultAudience = syncUri.getScheme() + "://" + syncUri.getAuthority();
-		}
+        // Fallback to sync service audience for local dashboard
+        if (new URI(defaultAudience).getScheme().equals("file")) {
+            URI syncUri = new URI(prefs.getString("dev_sync", "https://myapps.mozillalabs.com"));
+            defaultAudience = syncUri.getScheme() + "://" + syncUri.getAuthority();
+        }
 
-		final String audience = defaultAudience;
+        final String audience = defaultAudience;
 
-		Log.d(TAG, "preVerify continues on " + urlId + " to verify " + audience);
+        Log.d(TAG, "preVerify continues on " + urlId + " to verify " + audience);
 
-		final JSONObject assertions = new JSONObject(prefs.getString("assertions",
-				new JSONObject().toString()));
+        final JSONObject assertions = new JSONObject(prefs.getString("assertions",
+                new JSONObject().toString()));
 
-		final JSONObject event = new JSONObject().put("audience", audience)
-				.put("url", urlId).put("origin", identOrigin);
+        final JSONObject event = new JSONObject().put("audience", audience).put("url", urlId)
+                .put("origin", identOrigin);
 
-		final String email = prefs.getString("email", null);
-		if (!TextUtils.isEmpty(email)) {
-			Log.d(TAG, "preVerify has stored email " + email);
+        final String email = prefs.getString("email", null);
+        if (!TextUtils.isEmpty(email)) {
+            Log.d(TAG, "preVerify has stored email " + email);
 
-			event.put("email", email);
-		}
+            event.put("email", email);
+        }
 
-		final String assertion = assertions.optString(audience);
-		if (!TextUtils.isEmpty(assertion)) {
-			ctx.runOnUiThread(new Runnable() {
+        final String assertion = assertions.optString(audience);
+        if (!TextUtils.isEmpty(assertion)) {
+            ctx.runOnUiThread(new Runnable() {
 
-				public void run() {
+                public void run() {
 
-					ProgressDialog dlg = ProgressDialog.show(ctx, null,
-							"Verifying email", true, true);
+                    ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email", true,
+                            true);
 
-					String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
+                    String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
 
-					Log.d(TAG, "preVerify verified " + verifiedEmail + " from "
-							+ assertion);
+                    Log.d(TAG, "preVerify verified " + verifiedEmail + " from " + assertion);
 
-					if (!TextUtils.isEmpty(verifiedEmail)) {
-						try {
-							event.put("email", verifiedEmail).put("assertion", assertion);
+                    if (!TextUtils.isEmpty(verifiedEmail)) {
+                        try {
+                            event.put("email", verifiedEmail).put("assertion", assertion);
 
-							if (email != verifiedEmail) {
-								prefs.edit().putString("email", verifiedEmail).commit();
-								event.put("email", email);
-							}
-						} catch (JSONException e) {
-						}
-						
-						((SoupApplication) ctx.getApplication()).triggerSync();
-						
-					} else {
-						assertions.remove(audience);
-						prefs.edit().putString("assertions", assertions.toString())
-								.commit();
-					}
+                            if (email != verifiedEmail) {
+                                prefs.edit().putString("email", verifiedEmail).commit();
+                                event.put("email", email);
+                            }
+                        } catch (JSONException e) {
+                        }
 
-					Log.d(TAG, "preVerify returns " + event);
+                        ((SoupApplication)ctx.getApplication()).triggerSync();
 
-					dlg.dismiss();
+                    } else {
+                        assertions.remove(audience);
+                        prefs.edit().putString("assertions", assertions.toString()).commit();
+                    }
 
-					success(new PluginResult(Status.OK, event), callbackId);
-				}
-			});
+                    Log.d(TAG, "preVerify returns " + event);
 
-			PluginResult result = new PluginResult(Status.NO_RESULT);
-			result.setKeepCallback(true);
-			return result;
-		}
+                    dlg.dismiss();
 
-		Log.d(TAG, "preVerify returns " + event);
+                    success(new PluginResult(Status.OK, event), callbackId);
+                }
+            });
 
-		return new PluginResult(Status.OK, event);
-	}
+            PluginResult result = new PluginResult(Status.NO_RESULT);
+            result.setKeepCallback(true);
+            return result;
+        }
 
-	public PluginResult postVerify(final JSONArray data, final String callbackId)
-			throws Exception {
+        Log.d(TAG, "preVerify returns " + event);
 
-		if (data.isNull(1) || TextUtils.isEmpty(data.optString(1))) {
-			ctx.runOnUiThread(new Runnable() {
+        return new PluginResult(Status.OK, event);
+    }
 
-				public void run() {
-					Toast.makeText(ctx, "Login seems cancelled. Try again?",
-							Toast.LENGTH_SHORT).show();
-				}
+    public PluginResult postVerify(final JSONArray data, final String callbackId) throws Exception {
 
-			});
+        if (data.isNull(1) || TextUtils.isEmpty(data.optString(1))) {
+            ctx.runOnUiThread(new Runnable() {
 
-			return new PluginResult(Status.OK, false);
-		}
+                public void run() {
+                    Toast.makeText(ctx, "Login seems cancelled. Try again?", Toast.LENGTH_SHORT)
+                            .show();
+                }
 
-		final String audience = data.optString(0);
-		final String assertion = data.optString(1);
+            });
 
-		ctx.runOnUiThread(new Runnable() {
+            return new PluginResult(Status.OK, false);
+        }
 
-			public void run() {
+        final String audience = data.optString(0);
+        final String assertion = data.optString(1);
 
-				ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email",
-						true, true);
+        ctx.runOnUiThread(new Runnable() {
 
-				final String verifiedEmail = HttpFactory.verifyId(ctx, assertion,
-						audience);
+            public void run() {
 
-				Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience
-						+ " using " + assertion);
+                ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email", true, true);
 
-				if (verifiedEmail != null) {
+                final String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
 
-					SharedPreferences prefs = PreferenceManager
-							.getDefaultSharedPreferences(ctx);
+                Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience + " using "
+                        + assertion);
 
-					// Save assertions to preferences
-					JSONObject assertions = null;
-					try {
-						assertions = new JSONObject(prefs.getString("assertions",
-								new JSONObject().toString()));
-						assertions.put(audience, assertion);
-					} catch (JSONException e) {
-					}
-					prefs.edit().putString("assertions", assertions.toString()).commit();
+                if (verifiedEmail != null) {
 
-					dlg.dismiss();
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
-					// Save email if new
-					if (!verifiedEmail.equals(prefs.getString("email", null))) {
-						prefs.edit().putString("email", verifiedEmail).commit();
+                    // Save assertions to preferences
+                    JSONObject assertions = null;
+                    try {
+                        assertions = new JSONObject(prefs.getString("assertions",
+                                new JSONObject().toString()));
+                        assertions.put(audience, assertion);
+                    } catch (JSONException e) {
+                    }
+                    prefs.edit().putString("assertions", assertions.toString()).commit();
 
-						Toast.makeText(ctx, "Remembered login for " + verifiedEmail,
-								Toast.LENGTH_SHORT).show();
-					}
+                    dlg.dismiss();
 
-					dlg.dismiss();
+                    // Save email if new
+                    if (!verifiedEmail.equals(prefs.getString("email", null))) {
+                        prefs.edit().putString("email", verifiedEmail).commit();
 
-					((SoupApplication) ctx.getApplication()).triggerSync();
+                        Toast.makeText(ctx, "Remembered login for " + verifiedEmail,
+                                Toast.LENGTH_SHORT).show();
+                    }
 
-					success(new PluginResult(Status.OK, assertion), callbackId);
-				} else {
-					dlg.dismiss();
+                    dlg.dismiss();
 
-					Toast.makeText(ctx, "Verification failed, try to refresh!",
-							Toast.LENGTH_SHORT);
+                    ((SoupApplication)ctx.getApplication()).triggerSync();
 
-					success(new PluginResult(Status.OK, false), callbackId);
-				}
+                    success(new PluginResult(Status.OK, assertion), callbackId);
+                } else {
+                    dlg.dismiss();
 
-			}
-		});
+                    Toast.makeText(ctx, "Verification failed, try to refresh!", Toast.LENGTH_SHORT);
 
-		PluginResult result = new PluginResult(Status.NO_RESULT);
-		result.setKeepCallback(true);
-		return result;
-	}
+                    success(new PluginResult(Status.OK, false), callbackId);
+                }
+
+            }
+        });
+
+        PluginResult result = new PluginResult(Status.NO_RESULT);
+        result.setKeepCallback(true);
+        return result;
+    }
 
 }

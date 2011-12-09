@@ -47,7 +47,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Planned, to be verified -->
+            <!-- Planned, to be verified 
             <intent-filter >
                 <action android:name="android.intent.action.VIEW" />
 
@@ -62,6 +62,7 @@
                     android:pathPattern="*/apps/*"
                     android:scheme="https" />
             </intent-filter>
+            -->
         </activity>
         <activity
             android:alwaysRetainTaskState="true"
