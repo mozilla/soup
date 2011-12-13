@@ -1,3 +1,4 @@
+
 package org.mozilla.labs.Soup.service;
 
 import java.util.HashMap;
@@ -27,284 +28,293 @@ import android.util.Log;
 
 public class SyncService extends IntentService {
 
-	private static final String TAG = "SyncService";
+    private static final String TAG = "SyncService";
 
-	public static final String EXTRA_STATUS_RECEIVER = "org.mozilla.labs.soup.extra.STATUS_RECEIVER";
+    public static final String EXTRA_STATUS_RECEIVER = "org.mozilla.labs.soup.extra.STATUS_RECEIVER";
 
-	public static final int STATUS_RUNNING = 0x1;
-	public static final int STATUS_ERROR = 0x2;
-	public static final int STATUS_FINISHED = 0x3;
-	
-	public static final String EXTRA_STATUS_INSTALLED = "org.mozilla.labs.soup.extra.STATUS_INSTALLED";
-	public static final String EXTRA_STATUS_UPDATED = "org.mozilla.labs.soup.extra.STATUS_UPDATED";
-	public static final String EXTRA_STATUS_UPLOADED = "org.mozilla.labs.soup.extra.STATUS_UPLOADED";
+    public static final int STATUS_RUNNING = 0x1;
 
-	private ContentResolver resolver;
+    public static final int STATUS_ERROR = 0x2;
 
-	private NotificationManager mNM;
-	private int NOTIFY_ID = 1001;
+    public static final int STATUS_FINISHED = 0x3;
 
-	public SyncService() {
-		super(TAG);
-	}
+    public static final String EXTRA_STATUS_INSTALLED = "org.mozilla.labs.soup.extra.STATUS_INSTALLED";
 
-	@Override
-	public void onCreate() {
-		super.onCreate();
+    public static final String EXTRA_STATUS_UPDATED = "org.mozilla.labs.soup.extra.STATUS_UPDATED";
 
-		resolver = getContentResolver();
-		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-	}
-	
-	@Override
-	protected void onHandleIntent(Intent intent) {
-		Log.d(TAG, "onHandleIntent " + intent);
+    public static final String EXTRA_STATUS_UPLOADED = "org.mozilla.labs.soup.extra.STATUS_UPLOADED";
 
-		showNotification();
+    private ContentResolver resolver;
 
-		final ResultReceiver receiver = intent
-				.getParcelableExtra(EXTRA_STATUS_RECEIVER);
-		if (receiver != null)
-			receiver.send(STATUS_RUNNING, Bundle.EMPTY);
+    private NotificationManager mNM;
 
-		final Context ctx = this;
-		final SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(ctx);
-		final long localSince = prefs.getLong("sync_since", 0);
+    private int NOTIFY_ID = 1001;
 
-		Log.d(TAG, "Sync since " + localSince);
-		
-		int uploaded = 0;
-		int updated = 0;
-		int installed = 0;
-		
-		try {
+    public SyncService() {
+        super(TAG);
+    }
 
-			if (!HttpFactory.authorize(this)) {
-				throw new Exception("Current user is not authorized.");
-			}
-			
-			/**
-			 * Local list
-			 */
+    @Override
+    public void onCreate() {
+        super.onCreate();
 
-			Cursor cur = resolver.query(Apps.CONTENT_URI, Apps.APP_PROJECTION, null,
-					null, Apps.DEFAULT_SORT_ORDER);
+        resolver = getContentResolver();
+        mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+    }
 
-			cur.moveToFirst();
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        Log.d(TAG, "onHandleIntent " + intent);
 
-			HashMap<String, JSONObject> localList = new HashMap<String, JSONObject>();
+        showNotification();
 
-			while (cur.isAfterLast() == false) {
-				JSONObject app = Apps.toJSONObject(cur, true);
+        final ResultReceiver receiver = intent.getParcelableExtra(EXTRA_STATUS_RECEIVER);
+        if (receiver != null)
+            receiver.send(STATUS_RUNNING, Bundle.EMPTY);
 
-				if (app != null) {
-					localList.put(app.optString("origin"), app);
-				}
+        final Context ctx = this;
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        final long localSince = prefs.getLong("sync_since", 0);
 
-				cur.moveToNext();
-			}
+        Log.d(TAG, "Sync since " + localSince);
 
-			cur.close();
+        int uploaded = 0;
+        int updated = 0;
+        int installed = 0;
 
-			/**
-			 * Server list
-			 */
+        try {
 
-			JSONObject response = HttpFactory.getAllApps(this, localSince);
+            if (!HttpFactory.authorize(this)) {
+                throw new Exception("Current user is not authorized.");
+            }
 
-			Log.d(TAG, "List: " + response);
+            /**
+             * Local list
+             */
 
-			if (response == null) {
-				throw new Exception("Empty server response");
-			}
+            Cursor cur = resolver.query(Apps.CONTENT_URI, Apps.APP_PROJECTION, null, null,
+                    Apps.DEFAULT_SORT_ORDER);
 
-			JSONArray responseList = response.optJSONArray("applications");
-			if (responseList == null) {
-				responseList = new JSONArray();
-			}
-			
-			// TODO: Handle incomplete
-			
-			long until = response.optLong("until");
+            cur.moveToFirst();
 
-			HashMap<String, JSONObject> serverList = new HashMap<String, JSONObject>();
+            HashMap<String, JSONObject> localList = new HashMap<String, JSONObject>();
 
-			for (int i = 0, l = responseList.length(); i < l; i++) {
-				JSONObject app = responseList.getJSONObject(i);
+            while (cur.isAfterLast() == false) {
+                JSONObject app = Apps.toJSONObject(cur, true);
 
-				serverList.put(app.optString("origin"), app);
-			}
+                if (app != null) {
+                    localList.put(app.optString("origin"), app);
+                }
 
-			/**
-			 * Sync the 2 lists
-			 */
+                cur.moveToNext();
+            }
 
-			HashMap<String, JSONObject> toServerList = new HashMap<String, JSONObject>();
-			HashMap<String, JSONObject> toLocalList = new HashMap<String, JSONObject>();
+            cur.close();
 
-			for (HashMap.Entry<String, JSONObject> entry : serverList.entrySet()) {
-				String origin = entry.getKey();
-				JSONObject serverValue = entry.getValue();
-				
-				if (localList.containsKey(origin)) {
-					JSONObject localValue = localList.get(origin);
-					
-					long localDate = localValue.optLong("last_modified");
-					long serverDate = serverValue.optLong("last_modified");
+            /**
+             * Server list
+             */
 
-					if (localDate > serverDate) {
-						Log.d(TAG, "to server: " + origin + ", " + localDate + " > " + serverDate);
-						toServerList.put(origin, localValue);
-					} else if (localDate < serverDate) {
-						Log.d(TAG, "to local: " + origin + ", " + localDate + " < " + serverDate);
-						toLocalList.put(origin, serverValue);
-					}
-				} else {
-					Log.d(TAG, "to local: " + origin);
-					toLocalList.put(origin, serverValue);
-				}
-			}
-			
-			for (HashMap.Entry<String, JSONObject> entry : localList.entrySet()) {
-				String origin = entry.getKey();
-				JSONObject localValue = entry.getValue();
-				
-				long localDate = localValue.optLong("last_modified");
-				
-				if (!serverList.containsKey(origin) && localDate > localSince) {
-					Log.d(TAG, "to server: " + origin + ", " + localDate + " > " + localSince);
-					toServerList.put(origin, localValue);
-				}
-			}
-			
-			/**
-			 * Iterate sync result
-			 */
-			
-			// Update server values
-			
-			JSONArray serverUpdates = new JSONArray();
-			
-			for (HashMap.Entry<String, JSONObject> entry : toServerList.entrySet()) {
-				JSONObject localValue = entry.getValue();
-				
-				serverUpdates.put(localValue);
-				uploaded++;
-			}
-			
-			long updatedUntil = until;
-			
-			if (serverUpdates.length() > 0) {
-				updatedUntil = HttpFactory.updateApps(ctx, serverUpdates, until);
-				
-				if (updatedUntil < 1) {
-					throw new Exception("Update failed for " + serverUpdates);
-				}
-			}
-			
-			for (HashMap.Entry<String, JSONObject> entry : toServerList.entrySet()) {
-				String origin = entry.getKey();
-				
-				Cursor existing = Apps.findAppByOrigin(this, origin);
-				
-				ContentValues values = new ContentValues();
-				values.put(Apps.MODIFIED_DATE, updatedUntil);
-				
-				Uri appUri = Uri.withAppendedPath(Apps.CONTENT_URI, existing.getString(existing.getColumnIndex(Apps._ID)));
-				getContentResolver().update(appUri, values, null, null);
-			}
-			
-			// Update local values
-			
-			for (HashMap.Entry<String, JSONObject> entry : toLocalList.entrySet()) {
-				String origin = entry.getKey();
-				JSONObject serverValue = entry.getValue();
-				
-				Cursor existing = Apps.findAppByOrigin(this, origin);
-				
-				ContentValues values = Apps.toContentValues(serverValue);
-				
-				// TODO: Set better updatedUntil (get latest date from sync server)
-				values.put(Apps.MODIFIED_DATE, updatedUntil);
-				
-				if (existing == null) {
-					installed++;
-					getContentResolver().insert(Apps.CONTENT_URI, values);
-				} else {
-					updated++;
-					Uri appUri = Uri.withAppendedPath(Apps.CONTENT_URI, existing.getString(existing.getColumnIndex(Apps._ID)));
-					
-					getContentResolver().update(appUri, values, null, null);
-				}
-				
-			}
-			
-			prefs.edit().putLong("sync_since", updatedUntil).commit();
-			
-			Log.d(TAG, "Sync until " + updatedUntil);
+            JSONObject response = HttpFactory.getAllApps(this, localSince);
 
-			/**
-			 * Visual feedback
-			 */
-			
-			hideNotification();
+            Log.d(TAG, "List: " + response);
 
-		} catch (Exception e) {
-			Log.w(TAG, "Sync did not happen", e);
-			
-			hideNotification();
+            if (response == null) {
+                throw new Exception("Empty server response");
+            }
 
-			if (receiver != null) {
-				// Pass back error to surface listener
-				final Bundle bundle = new Bundle();
-				bundle.putString(Intent.EXTRA_TEXT, e.toString());
-				receiver.send(STATUS_ERROR, bundle);
-			}
-		}
+            JSONArray responseList = response.optJSONArray("applications");
+            if (responseList == null) {
+                responseList = new JSONArray();
+            }
 
-		// Announce success to any surface listener
-		if (receiver != null) {
-			final Bundle bundle = new Bundle();
-			bundle.putInt(EXTRA_STATUS_UPLOADED, uploaded);
-			bundle.putInt(EXTRA_STATUS_INSTALLED, installed);
-			bundle.putInt(EXTRA_STATUS_UPDATED, updated);
-			
-			receiver.send(STATUS_FINISHED, bundle);
-		}
-	}
+            // TODO: Handle incomplete
 
-	/**
-	 * Show a notification while this service is running.
-	 */
-	private void showNotification() {
-		if (mNM == null) {
-			return;
-		}
-		
-		// Set the icon, scrolling text and timestamp
-		Notification notification = new Notification(R.drawable.stat_notify_sync,
-				"Syncing Apps", System.currentTimeMillis());
+            long until = response.optLong("until");
 
-		// The PendingIntent to launch our activity if the user selects this notification
-		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-				new Intent(this, LauncherActivity.class), 0);
+            HashMap<String, JSONObject> serverList = new HashMap<String, JSONObject>();
 
-		// Set the info for the views that show in the notification panel.
-		notification
-				.setLatestEventInfo(this, "Soup Apps", "Synchronizing updates", contentIntent);
+            for (int i = 0, l = responseList.length(); i < l; i++) {
+                JSONObject app = responseList.getJSONObject(i);
 
-		// Send the notification.
-		// We use a string id because it is a unique number. We use it later to cancel.
-		mNM.notify(TAG, NOTIFY_ID, notification);
-	}
+                serverList.put(app.optString("origin"), app);
+            }
 
-	private void hideNotification() {
-		if (mNM == null) {
-			return;
-		}
-		
-		mNM.cancel(TAG, NOTIFY_ID);
-	}
+            /**
+             * Sync the 2 lists
+             */
+
+            HashMap<String, JSONObject> toServerList = new HashMap<String, JSONObject>();
+            HashMap<String, JSONObject> toLocalList = new HashMap<String, JSONObject>();
+
+            for (HashMap.Entry<String, JSONObject> entry : serverList.entrySet()) {
+                String origin = entry.getKey();
+                JSONObject serverValue = entry.getValue();
+
+                if (localList.containsKey(origin)) {
+                    JSONObject localValue = localList.get(origin);
+
+                    long localDate = localValue.optLong("last_modified");
+                    long serverDate = serverValue.optLong("last_modified");
+
+                    if (localDate > serverDate) {
+                        Log.d(TAG, "to server: " + origin + ", " + localDate + " > " + serverDate);
+                        toServerList.put(origin, localValue);
+                    } else if (localDate < serverDate) {
+                        Log.d(TAG, "to local: " + origin + ", " + localDate + " < " + serverDate);
+                        toLocalList.put(origin, serverValue);
+                    }
+                } else {
+                    Log.d(TAG, "to local: " + origin);
+                    toLocalList.put(origin, serverValue);
+                }
+            }
+
+            for (HashMap.Entry<String, JSONObject> entry : localList.entrySet()) {
+                String origin = entry.getKey();
+                JSONObject localValue = entry.getValue();
+
+                long localDate = localValue.optLong("last_modified");
+
+                if (!serverList.containsKey(origin) && localDate > localSince) {
+                    Log.d(TAG, "to server: " + origin + ", " + localDate + " > " + localSince);
+                    toServerList.put(origin, localValue);
+                }
+            }
+
+            /**
+             * Iterate sync result
+             */
+
+            // Update server values
+
+            JSONArray serverUpdates = new JSONArray();
+
+            for (HashMap.Entry<String, JSONObject> entry : toServerList.entrySet()) {
+                JSONObject localValue = entry.getValue();
+
+                serverUpdates.put(localValue);
+                uploaded++;
+            }
+
+            long updatedUntil = until;
+
+            if (serverUpdates.length() > 0) {
+                updatedUntil = HttpFactory.updateApps(ctx, serverUpdates, until);
+
+                if (updatedUntil < 1) {
+                    throw new Exception("Update failed for " + serverUpdates);
+                }
+            }
+
+            for (HashMap.Entry<String, JSONObject> entry : toServerList.entrySet()) {
+                String origin = entry.getKey();
+
+                Cursor existing = Apps.findAppByOrigin(this, origin);
+
+                ContentValues values = new ContentValues();
+                values.put(Apps.MODIFIED_DATE, updatedUntil);
+
+                Uri appUri = Uri.withAppendedPath(Apps.CONTENT_URI,
+                        existing.getString(existing.getColumnIndex(Apps._ID)));
+                getContentResolver().update(appUri, values, null, null);
+            }
+
+            // Update local values
+
+            for (HashMap.Entry<String, JSONObject> entry : toLocalList.entrySet()) {
+                String origin = entry.getKey();
+                JSONObject serverValue = entry.getValue();
+
+                Cursor existing = Apps.findAppByOrigin(this, origin);
+
+                ContentValues values = Apps.toContentValues(serverValue);
+
+                // TODO: Set better updatedUntil (get latest date from sync
+                // server)
+                values.put(Apps.MODIFIED_DATE, updatedUntil);
+
+                if (existing == null) {
+                    installed++;
+                    getContentResolver().insert(Apps.CONTENT_URI, values);
+                } else {
+                    updated++;
+                    Uri appUri = Uri.withAppendedPath(Apps.CONTENT_URI,
+                            existing.getString(existing.getColumnIndex(Apps._ID)));
+
+                    getContentResolver().update(appUri, values, null, null);
+                }
+
+            }
+
+            prefs.edit().putLong("sync_since", updatedUntil).commit();
+
+            Log.d(TAG, "Sync until " + updatedUntil);
+
+            /**
+             * Visual feedback
+             */
+
+            hideNotification();
+
+        } catch (Exception e) {
+            Log.w(TAG, "Sync did not happen", e);
+
+            hideNotification();
+
+            if (receiver != null) {
+                // Pass back error to surface listener
+                final Bundle bundle = new Bundle();
+                bundle.putString(Intent.EXTRA_TEXT, e.toString());
+                receiver.send(STATUS_ERROR, bundle);
+            }
+        }
+
+        // Announce success to any surface listener
+        if (receiver != null) {
+            final Bundle bundle = new Bundle();
+            bundle.putInt(EXTRA_STATUS_UPLOADED, uploaded);
+            bundle.putInt(EXTRA_STATUS_INSTALLED, installed);
+            bundle.putInt(EXTRA_STATUS_UPDATED, updated);
+
+            receiver.send(STATUS_FINISHED, bundle);
+        }
+    }
+
+    /**
+     * Show a notification while this service is running.
+     */
+    private void showNotification() {
+        if (mNM == null) {
+            return;
+        }
+
+        // Set the icon, scrolling text and timestamp
+        Notification notification = new Notification(R.drawable.stat_notify_sync, "Syncing Apps",
+                System.currentTimeMillis());
+
+        // The PendingIntent to launch our activity if the user selects this
+        // notification
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this,
+                LauncherActivity.class), 0);
+
+        // Set the info for the views that show in the notification panel.
+        notification.setLatestEventInfo(this,
+                getText(org.mozilla.labs.Soup.R.string.app_name_launcher), "Synchronizing apps",
+                contentIntent);
+
+        // Send the notification.
+        // We use a string id because it is a unique number. We use it later to
+        // cancel.
+        mNM.notify(TAG, NOTIFY_ID, notification);
+    }
+
+    private void hideNotification() {
+        if (mNM == null) {
+            return;
+        }
+
+        mNM.cancel(TAG, NOTIFY_ID);
+    }
 
 }

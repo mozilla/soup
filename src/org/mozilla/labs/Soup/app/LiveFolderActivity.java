@@ -38,7 +38,7 @@ public class LiveFolderActivity extends Activity {
 			liveFolderIntent.setData(CONTENT_URI);
 			liveFolderIntent.putExtra(LiveFolders.EXTRA_LIVE_FOLDER_NAME, getString(R.string.app_name_live));
 			liveFolderIntent.putExtra(LiveFolders.EXTRA_LIVE_FOLDER_ICON,
-					Intent.ShortcutIconResource.fromContext(this, R.drawable.soup));
+                    Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher_rt));
 			liveFolderIntent.putExtra(LiveFolders.EXTRA_LIVE_FOLDER_DISPLAY_MODE, LiveFolders.DISPLAY_MODE_LIST);
 			liveFolderIntent.putExtra(LiveFolders.EXTRA_LIVE_FOLDER_BASE_INTENT, new Intent(Intent.ACTION_EDIT,
 					APPS_URI));
