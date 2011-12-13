@@ -31,7 +31,7 @@
     <uses-sdk android:minSdkVersion="8" />
 
     <application
-        android:icon="@drawable/soup"
+        android:icon="@drawable/ic_launcher_rt"
         android:label="@string/app_name"
         android:name=".app.SoupApplication" >
         <activity
@@ -47,7 +47,8 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Planned, to be verified 
+            <!--
+            Planned, to be verified 
             <intent-filter >
                 <action android:name="android.intent.action.VIEW" />
 
@@ -72,11 +73,6 @@
             android:name=".app.LauncherActivity"
             android:taskAffinity=".app.LauncherActivity"
             android:theme="@android:style/Theme.NoTitleBar" >
-            <intent-filter >
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity
             android:alwaysRetainTaskState="true"
@@ -119,7 +115,7 @@
         <!-- Shortcuts -->
 
         <activity
-            android:icon="@drawable/soup"
+            android:icon="@drawable/ic_launcher_rt"
             android:label="@string/app_name_live"
             android:name=".app.LiveFolderActivity" >
             <intent-filter >
