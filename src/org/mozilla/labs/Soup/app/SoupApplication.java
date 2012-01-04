@@ -1,13 +1,14 @@
+
 package org.mozilla.labs.Soup.app;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Observable;
 
 import org.mozilla.labs.Soup.R;
 import org.mozilla.labs.Soup.service.DetachableResultReceiver;
 import org.mozilla.labs.Soup.service.SyncService;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,148 +16,188 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.widget.Toast;
 
 public class SoupApplication extends Application {
 
-	private static final String TAG = "SoupApplication";
+    private static final String TAG = "SoupApplication";
 
-	public SyncManager syncManager;
+    public SyncManager syncManager;
 
-	@Override
-	public void onCreate() {
-		Log.d(TAG, "onCreate");
+    protected ArrayList<SoupActivity> activities = new ArrayList<SoupActivity>();
 
-		/*
-		 * This populates the default values from the preferences XML file.
-		 */
-		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+    @Override
+    public void onCreate() {
+        Log.d(TAG, "onCreate");
 
-		syncManager = new SyncManager();
-	}
+        /*
+         * This populates the default values from the preferences XML file.
+         */
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-	@Override
-	public void onTerminate() {
-		syncManager.terminate();
-	}
+        syncManager = new SyncManager();
+    }
 
-	public class SyncManager extends Observable implements
-			DetachableResultReceiver.Receiver {
+    @Override
+    public void onTerminate() {
+        Log.d(TAG, "TERMINATED");
 
-		private DetachableResultReceiver receiver;
-		private boolean syncRunning;
+        syncManager.terminate();
+    }
 
-		public SyncManager() {
-			receiver = new DetachableResultReceiver(new Handler());
-			receiver.setReceiver(this);
-		}
+    public void registerActivity(SoupActivity activity) {
+        if (!activities.contains(activity)) {
+            activities.add(activity);
+        }
+    }
 
-		public void terminate() {
-			if (syncRunning) {
-				final Intent intent = new Intent(SoupApplication.this,
-						SyncService.class);
-				stopService(intent);
-			}
+    public void unregisterActivity(SoupActivity activity) {
+        activities.remove(activity);
+    }
 
-		}
+    public void finishAllActivities(boolean clear) {
+        Log.d(TAG, "Finishing " + activities.size() + " activities");
 
-		public void startSync() {
-			if (syncRunning)
-				return;
+        for (int i = 0, l = activities.size(); i < l; i++) {
+            SoupActivity activity = activities.get(i);
 
-			syncRunning = true;
+            if (clear) {
+                activity.clearCache();
+            }
 
-			setChanged();
-			notifyObservers(0);
+            activity.finish();
+        }
+    }
 
-			final Intent intent = new Intent(SoupApplication.this,
-					SyncService.class);
-			intent.putExtra(SyncService.EXTRA_STATUS_RECEIVER, receiver);
-			startService(intent);
-		}
+    public class SyncManager extends Observable implements DetachableResultReceiver.Receiver {
 
-		public void onReceiveResult(int resultCode, Bundle resultData) {
-			// TODO: Review IBinder onBind so every activity can bind the service?
-			// @see RemoteService.java from android-8
+        private DetachableResultReceiver receiver;
 
-			switch (resultCode) {
-			case SyncService.STATUS_RUNNING:
-				// show progress
-				break;
-			case SyncService.STATUS_FINISHED:
-				syncRunning = false;
+        private boolean syncRunning;
 
-				int installed = resultData.getInt(SyncService.EXTRA_STATUS_INSTALLED);
-				int updated = resultData.getInt(SyncService.EXTRA_STATUS_UPDATED);
+        public SyncManager() {
+            receiver = new DetachableResultReceiver(new Handler());
+            receiver.setReceiver(this);
+        }
 
-				setChanged();
-				notifyObservers(installed + updated);
-				
-				break;
-			case SyncService.STATUS_ERROR:
+        public void terminate() {
+            if (syncRunning) {
+                final Intent intent = new Intent(SoupApplication.this, SyncService.class);
+                stopService(intent);
+            }
 
-				// handle the error;
-				break;
-			}
-		}
+        }
 
-	}
+        public void startSync() {
+            if (syncRunning)
+                return;
 
-	public void triggerSync() {
-		syncManager.startSync();
-	}
+            syncRunning = true;
 
-	
-	public void clearData(Activity activity) {
-		// TODO: Find a clean way to reset
+            setChanged();
+            notifyObservers(0);
 
-		// Buggy:
-//		Log.d(TAG, "Deleting webview.db " + deleteDatabase("webview.db"));
-//		Log.d(TAG, "Deleting webviewCache.db "
-//				+ deleteDatabase("webviewCache.db"));
-		
-		Log.d(TAG, "Deleting apps.db " + deleteDatabase("apps.db"));
+            final Intent intent = new Intent(SoupApplication.this, SyncService.class);
+            intent.putExtra(SyncService.EXTRA_STATUS_RECEIVER, receiver);
+            startService(intent);
+        }
 
-		SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(this);
-		prefs.edit().clear().commit();
+        public void onReceiveResult(int resultCode, Bundle resultData) {
+            // TODO: Review IBinder onBind so every activity can bind the
+            // service?
+            // @see RemoteService.java from android-8
 
-		PreferenceManager.setDefaultValues(this, R.xml.preferences, true);
+            switch (resultCode) {
+                case SyncService.STATUS_RUNNING:
+                    // show progress
+                    break;
+                case SyncService.STATUS_FINISHED:
+                    syncRunning = false;
 
-		deleteCache();
-		
-		Toast.makeText(activity, "Personal data cleared!", Toast.LENGTH_SHORT);
+                    int installed = resultData.getInt(SyncService.EXTRA_STATUS_INSTALLED);
+                    int updated = resultData.getInt(SyncService.EXTRA_STATUS_UPDATED);
 
-		Intent intent = new Intent(this, LauncherActivity.class);
-		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-		
-		activity.startActivity(intent);
-		
-		activity.finish();
-	}
+                    setChanged();
+                    notifyObservers(installed + updated);
 
-	private void deleteCache() {
-		try {
-			File dir = getCacheDir();
-			if (dir != null && dir.isDirectory()) {
-				deleteDir(dir);
-			}
-		} catch (Exception e) {
-			Log.w(TAG, "Could not delete cache", e);
-		}
-	}
+                    break;
+                case SyncService.STATUS_ERROR:
 
-	private boolean deleteDir(File dir) {
-		if (dir != null && dir.isDirectory()) {
-			String[] children = dir.list();
-			for (String file : children) {
-				if (!deleteDir(new File(dir, file))) {
-					return false;
-				}
-			}
-		}
+                    // handle the error;
+                    break;
+            }
+        }
 
-		return dir.delete();
-	}
+    }
+
+    public void triggerSync() {
+        syncManager.startSync();
+    }
+
+    public void clearData(SoupActivity activity) {
+
+        activity.clearCache();
+
+        Log.d(TAG, "Deleting apps.db: " + deleteDatabase("apps.db"));
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.edit().clear().commit();
+
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, true);
+
+        deleteCache();
+
+        Toast.makeText(activity, "Restarting application.", Toast.LENGTH_SHORT);
+
+        CookieSyncManager.createInstance(this);
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.removeAllCookie();
+        cookieManager.removeSessionCookie();
+
+        finishAllActivities(true);
+
+        syncManager.terminate();
+
+        Intent i = getBaseContext().getPackageManager().getLaunchIntentForPackage(
+                getBaseContext().getPackageName());
+
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(i);
+    }
+
+    private void deleteCache() {
+        try {
+            File dir = getCacheDir();
+            if (dir != null && dir.isDirectory()) {
+                deleteDir(dir);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Could not delete cache", e);
+        }
+
+        try {
+            File dir = getExternalCacheDir();
+            if (dir != null && dir.isDirectory()) {
+                deleteDir(dir);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Could not delete external cache", e);
+        }
+    }
+
+    private boolean deleteDir(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            for (String file : children) {
+                if (!deleteDir(new File(dir, file))) {
+                    return false;
+                }
+            }
+        }
+
+        return dir.delete();
+    }
 
 }
