@@ -278,7 +278,7 @@ public abstract class SoupActivity extends DroidGap {
 
             // FIXME: This is a phonegap issue when using loadUrl to inject JS
             // on redirecting pages
-            if (url.equals("about:blank")) {
+            if (url == null || url.equals("about:blank")) {
                 result.cancel();
                 return true;
             }

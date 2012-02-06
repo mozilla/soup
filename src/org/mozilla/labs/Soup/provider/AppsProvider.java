@@ -42,276 +42,278 @@ import android.util.Log;
  */
 public class AppsProvider extends ContentProvider {
 
-	private static final String TAG = "AppsProvider";
+    private static final String TAG = "AppsProvider";
 
-	private static final String DATABASE_NAME = "apps.db";
-	private static final int DATABASE_VERSION = 6;
-	private static final String APPS_TABLE_NAME = "apps";
+    private static final String DATABASE_NAME = "apps.db";
 
-	private static HashMap<String, String> sAppsProjectionMap;
-	private static HashMap<String, String> sLiveFolderProjectionMap;
+    private static final int DATABASE_VERSION = 6;
 
-	private static final int APPS = 1;
-	private static final int APP_ID = 2;
-	private static final int LIVE_FOLDER_APPS = 3;
-	
-	private static final String SQL_CREATE = "CREATE TABLE " + APPS_TABLE_NAME + " (" + Apps._ID
-			+ " INTEGER PRIMARY KEY," + Apps.ORIGIN + " TEXT," + Apps.NAME
-			+ " TEXT," + Apps.DESCRIPTION + " TEXT," + Apps.ICON + " TEXT,"
-			+ Apps.MANIFEST + " BLOB," + Apps.MANIFEST_URL + " TEXT,"
-			+ Apps.INSTALL_DATA + " BLOB," + Apps.INSTALL_RECEIPT + " BLOB,"
-			+ Apps.INSTALL_ORIGIN + " TEXT," + Apps.INSTALL_TIME + " INTEGER,"
-			+ Apps.VERIFIED_DATE + " INTEGER," + Apps.SYNCED_DATE + " INTEGER,"
-			+ Apps.STATUS + " INTEGER," + Apps.CREATED_DATE + " INTEGER,"
-			+ Apps.MODIFIED_DATE + " INTEGER" + ");";
+    private static final String APPS_TABLE_NAME = "apps";
 
-	private static final UriMatcher sUriMatcher;
+    private static HashMap<String, String> sAppsProjectionMap;
 
-	/**
-	 * This class helps open, create, and upgrade the database file.
-	 */
-	private static class DatabaseHelper extends SQLiteOpenHelper {
+    private static HashMap<String, String> sLiveFolderProjectionMap;
 
-		DatabaseHelper(Context context) {
-			super(context, DATABASE_NAME, null, DATABASE_VERSION);
-		}
+    private static final int APPS = 1;
 
-		@Override
-		public void onCreate(SQLiteDatabase db) {
-			Log.d(TAG + ".DatabaseHelper", "onCreate: " + SQL_CREATE);
+    private static final int APP_ID = 2;
 
-			db.execSQL(SQL_CREATE);
-		}
+    private static final int LIVE_FOLDER_APPS = 3;
 
-		@Override
-		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			Log.w(TAG + ".DatabaseHelper", "Upgrading database from version "
-					+ oldVersion + " to " + newVersion
-					+ ", which will destroy all old data");
+    private static final String SQL_CREATE = "CREATE TABLE " + APPS_TABLE_NAME + " (" + Apps._ID
+            + " INTEGER PRIMARY KEY," + Apps.ORIGIN + " TEXT," + Apps.NAME + " TEXT,"
+            + Apps.DESCRIPTION + " TEXT," + Apps.ICON + " TEXT," + Apps.MANIFEST + " BLOB,"
+            + Apps.MANIFEST_URL + " TEXT," + Apps.INSTALL_DATA + " BLOB," + Apps.INSTALL_RECEIPT
+            + " BLOB," + Apps.INSTALL_ORIGIN + " TEXT," + Apps.INSTALL_TIME + " INTEGER,"
+            + Apps.VERIFIED_DATE + " INTEGER," + Apps.SYNCED_DATE + " INTEGER," + Apps.STATUS
+            + " INTEGER," + Apps.CREATED_DATE + " INTEGER," + Apps.MODIFIED_DATE + " INTEGER"
+            + ");";
 
-			db.execSQL("DROP TABLE IF EXISTS apps");
-			onCreate(db);
-		}
-	}
+    private static final UriMatcher sUriMatcher;
 
-	private DatabaseHelper mOpenHelper;
+    /**
+     * This class helps open, create, and upgrade the database file.
+     */
+    private static class DatabaseHelper extends SQLiteOpenHelper {
 
-	@Override
-	public boolean onCreate() {
-		Log.d(TAG, "onCreate");
+        DatabaseHelper(Context context) {
+            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        }
 
-		mOpenHelper = new DatabaseHelper(getContext());
-		return true;
-	}
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            Log.d(TAG + ".DatabaseHelper", "onCreate: " + SQL_CREATE);
 
-	@Override
-	public Cursor query(Uri uri, String[] projection, String selection,
-			String[] selectionArgs, String sortOrder) {
-		SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+            db.execSQL(SQL_CREATE);
+        }
 
-		qb.setTables(APPS_TABLE_NAME);
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            Log.w(TAG + ".DatabaseHelper", "Upgrading database from version " + oldVersion + " to "
+                    + newVersion + ", which will destroy all old data");
 
-		switch (sUriMatcher.match(uri)) {
-		case APPS:
-			qb.setProjectionMap(sAppsProjectionMap);
-			break;
+            db.execSQL("DROP TABLE IF EXISTS apps");
+            onCreate(db);
+        }
+    }
 
-		case APP_ID:
-			qb.setProjectionMap(sAppsProjectionMap);
-			qb.appendWhere(Apps._ID + "=" + uri.getPathSegments().get(1));
-			break;
+    private DatabaseHelper mOpenHelper;
 
-		case LIVE_FOLDER_APPS:
-			qb.setProjectionMap(sLiveFolderProjectionMap);
-			break;
+    @Override
+    public boolean onCreate() {
+        Log.d(TAG, "onCreate");
 
-		default:
-			throw new IllegalArgumentException("Unknown URI " + uri);
-		}
+        mOpenHelper = new DatabaseHelper(getContext());
+        return true;
+    }
 
-		// If no sort order is specified use the default
-		String orderBy;
-		if (TextUtils.isEmpty(sortOrder)) {
-			orderBy = AppsContract.Apps.DEFAULT_SORT_ORDER;
-		} else {
-			orderBy = sortOrder;
-		}
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+            String sortOrder) {
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
 
-		// Get the database and run the query
-		SQLiteDatabase db = mOpenHelper.getReadableDatabase();
-		Cursor c = qb.query(db, projection, selection, selectionArgs, null, null,
-				orderBy);
+        qb.setTables(APPS_TABLE_NAME);
 
-		// Tell the cursor what uri to watch, so it knows when its source data changes
-		c.setNotificationUri(getContext().getContentResolver(), uri);
-		return c;
-	}
+        switch (sUriMatcher.match(uri)) {
+            case APPS:
+                qb.setProjectionMap(sAppsProjectionMap);
+                break;
 
-	@Override
-	public String getType(Uri uri) {
-		switch (sUriMatcher.match(uri)) {
-		case APPS:
-		case LIVE_FOLDER_APPS:
-			return Apps.CONTENT_TYPE;
+            case APP_ID:
+                qb.setProjectionMap(sAppsProjectionMap);
+                qb.appendWhere(Apps._ID + "=" + uri.getPathSegments().get(1));
+                break;
 
-		case APP_ID:
-			return Apps.CONTENT_ITEM_TYPE;
+            case LIVE_FOLDER_APPS:
+                qb.setProjectionMap(sLiveFolderProjectionMap);
+                break;
 
-		default:
-			throw new IllegalArgumentException("Unknown URI " + uri);
-		}
-	}
+            default:
+                throw new IllegalArgumentException("Unknown URI " + uri);
+        }
 
-	@Override
-	public Uri insert(Uri uri, ContentValues initialValues) {
-		// Validate the requested uri
-		if (sUriMatcher.match(uri) != APPS) {
-			throw new IllegalArgumentException("Unknown URI " + uri);
-		}
+        // If no sort order is specified use the default
+        String orderBy;
+        if (TextUtils.isEmpty(sortOrder)) {
+            orderBy = AppsContract.Apps.DEFAULT_SORT_ORDER;
+        } else {
+            orderBy = sortOrder;
+        }
 
-		ContentValues values;
-		if (initialValues != null) {
-			values = new ContentValues(initialValues);
-		} else {
-			values = new ContentValues();
-		}
+        // Get the database and run the query
+        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
+        Cursor c = qb.query(db, projection, selection, selectionArgs, null, null, orderBy);
 
-		Long now = Long.valueOf(System.currentTimeMillis());
+        // Tell the cursor what uri to watch, so it knows when its source data
+        // changes
+        c.setNotificationUri(getContext().getContentResolver(), uri);
+        return c;
+    }
 
-		// Make sure that the fields are all set
-		if (values.containsKey(AppsContract.Apps.CREATED_DATE) == false) {
-			values.put(AppsContract.Apps.CREATED_DATE, now);
-		}
-		if (values.containsKey(AppsContract.Apps.MODIFIED_DATE) == false) {
-			values.put(AppsContract.Apps.MODIFIED_DATE, now);
-		}
-		if (values.containsKey(AppsContract.Apps.INSTALL_TIME) == false) {
-			values.put(AppsContract.Apps.INSTALL_TIME, now);
-		}
+    @Override
+    public String getType(Uri uri) {
+        switch (sUriMatcher.match(uri)) {
+            case APPS:
+            case LIVE_FOLDER_APPS:
+                return Apps.CONTENT_TYPE;
 
-		if (values.containsKey(AppsContract.Apps.NAME) == false) {
-			Resources r = Resources.getSystem();
-			values
-					.put(AppsContract.Apps.NAME, r.getString(android.R.string.untitled));
-		}
-		if (values.containsKey(AppsContract.Apps.DESCRIPTION) == false) {
-			values.put(AppsContract.Apps.DESCRIPTION, "");
-		}
+            case APP_ID:
+                return Apps.CONTENT_ITEM_TYPE;
 
-		if (values.containsKey(AppsContract.Apps.MANIFEST) == false) {
-			values.put(AppsContract.Apps.MANIFEST, new JSONObject().toString());
-		}
-		if (values.containsKey(AppsContract.Apps.MANIFEST_URL) == false) {
-			values.put(AppsContract.Apps.MANIFEST_URL, "");
-		}
-		if (values.containsKey(AppsContract.Apps.INSTALL_DATA) == false) {
-			values.put(AppsContract.Apps.INSTALL_DATA, new JSONObject().toString());
-		}
-		
-		if (values.containsKey(AppsContract.Apps.STATUS) == false) {
-			values.put(AppsContract.Apps.STATUS, 0);
-		}
+            default:
+                throw new IllegalArgumentException("Unknown URI " + uri);
+        }
+    }
 
-		SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-		long rowId = db.insert(APPS_TABLE_NAME, null, values);
+    @Override
+    public Uri insert(Uri uri, ContentValues initialValues) {
+        // Validate the requested uri
+        if (sUriMatcher.match(uri) != APPS) {
+            throw new IllegalArgumentException("Unknown URI " + uri);
+        }
 
-		if (rowId > 0) {
-			Uri appUri = ContentUris.withAppendedId(AppsContract.Apps.CONTENT_URI,
-					rowId);
-			getContext().getContentResolver().notifyChange(appUri, null);
-			return appUri;
-		}
+        ContentValues values;
+        if (initialValues != null) {
+            values = new ContentValues(initialValues);
+        } else {
+            values = new ContentValues();
+        }
 
-		throw new SQLException("Failed to insert row into " + uri);
-	}
+        Long now = Long.valueOf(System.currentTimeMillis());
 
-	@Override
-	public int delete(Uri uri, String where, String[] whereArgs) {
-		SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-		int count;
-		switch (sUriMatcher.match(uri)) {
-		case APPS:
-			count = db.delete(APPS_TABLE_NAME, where, whereArgs);
-			break;
+        // Make sure that the fields are all set
+        if (values.containsKey(AppsContract.Apps.CREATED_DATE) == false) {
+            values.put(AppsContract.Apps.CREATED_DATE, now);
+        }
+        if (values.containsKey(AppsContract.Apps.MODIFIED_DATE) == false) {
+            values.put(AppsContract.Apps.MODIFIED_DATE, now);
+        }
+        if (values.containsKey(AppsContract.Apps.INSTALL_TIME) == false) {
+            values.put(AppsContract.Apps.INSTALL_TIME, now);
+        }
 
-		case APP_ID:
-			String appId = uri.getPathSegments().get(1);
-			count = db.delete(APPS_TABLE_NAME,
-					Apps._ID + "=" + appId
-							+ (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""),
-					whereArgs);
-			break;
+        if (values.containsKey(AppsContract.Apps.NAME) == false) {
+            Resources r = Resources.getSystem();
+            values.put(AppsContract.Apps.NAME, r.getString(android.R.string.untitled));
+        }
+        if (values.containsKey(AppsContract.Apps.DESCRIPTION) == false) {
+            values.put(AppsContract.Apps.DESCRIPTION, "");
+        }
 
-		default:
-			throw new IllegalArgumentException("Unknown URI " + uri);
-		}
+        if (values.containsKey(AppsContract.Apps.MANIFEST) == false) {
+            values.put(AppsContract.Apps.MANIFEST, new JSONObject().toString());
+        }
+        if (values.containsKey(AppsContract.Apps.MANIFEST_URL) == false) {
+            values.put(AppsContract.Apps.MANIFEST_URL, "");
+        }
+        if (values.containsKey(AppsContract.Apps.INSTALL_DATA) == false) {
+            values.put(AppsContract.Apps.INSTALL_DATA, new JSONObject().toString());
+        }
 
-		getContext().getContentResolver().notifyChange(uri, null);
-		return count;
-	}
+        if (values.containsKey(AppsContract.Apps.STATUS) == false) {
+            values.put(AppsContract.Apps.STATUS, 0);
+        }
 
-	@Override
-	public int update(Uri uri, ContentValues values, String where,
-			String[] whereArgs) {
-		SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-		int count;
-		switch (sUriMatcher.match(uri)) {
-		case APPS:
-			count = db.update(APPS_TABLE_NAME, values, where, whereArgs);
-			break;
+        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        long rowId = db.insert(APPS_TABLE_NAME, null, values);
 
-		case APP_ID:
-			String appId = uri.getPathSegments().get(1);
+        if (rowId > 0) {
+            Uri appUri = ContentUris.withAppendedId(AppsContract.Apps.CONTENT_URI, rowId);
+            getContext().getContentResolver().notifyChange(appUri, null);
+            return appUri;
+        }
 
-//			values.put(AppsContract.Apps.MODIFIED_DATE,
-//					Long.valueOf(System.currentTimeMillis()));
+        throw new SQLException("Failed to insert row into " + uri);
+    }
 
-			count = db.update(APPS_TABLE_NAME, values, Apps._ID + "=" + appId
-					+ (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""),
-					whereArgs);
-			break;
+    @Override
+    public int delete(Uri uri, String where, String[] whereArgs) {
+        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        int count;
+        switch (sUriMatcher.match(uri)) {
+            case APPS:
+                count = db.delete(APPS_TABLE_NAME, where, whereArgs);
+                break;
 
-		default:
-			throw new IllegalArgumentException("Unknown URI " + uri);
-		}
+            case APP_ID:
+                String appId = uri.getPathSegments().get(1);
+                count = db.delete(APPS_TABLE_NAME,
+                        Apps._ID + "=" + appId
+                                + (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""),
+                        whereArgs);
+                break;
 
-		getContext().getContentResolver().notifyChange(uri, null);
-		return count;
-	}
+            default:
+                throw new IllegalArgumentException("Unknown URI " + uri);
+        }
 
-	static {
-		sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-		sUriMatcher.addURI(Apps.AUTHORITY, "apps", APPS);
-		sUriMatcher.addURI(Apps.AUTHORITY, "apps/#", APP_ID);
-		sUriMatcher.addURI(Apps.AUTHORITY, "live_folders/apps", LIVE_FOLDER_APPS);
+        getContext().getContentResolver().notifyChange(uri, null);
+        return count;
+    }
 
-		sAppsProjectionMap = new HashMap<String, String>();
-		sAppsProjectionMap.put(Apps._ID, Apps._ID);
-		sAppsProjectionMap.put(Apps.ORIGIN, Apps.ORIGIN);
-		sAppsProjectionMap.put(Apps.MANIFEST, Apps.MANIFEST);
-		sAppsProjectionMap.put(Apps.MANIFEST_URL, Apps.MANIFEST_URL);
-		sAppsProjectionMap.put(Apps.NAME, Apps.NAME);
-		sAppsProjectionMap.put(Apps.DESCRIPTION, Apps.DESCRIPTION);
-		sAppsProjectionMap.put(Apps.ICON, Apps.ICON);
-		sAppsProjectionMap.put(Apps.INSTALL_DATA, Apps.INSTALL_DATA);
-		sAppsProjectionMap.put(Apps.INSTALL_ORIGIN, Apps.INSTALL_ORIGIN);
-		sAppsProjectionMap.put(Apps.INSTALL_TIME, Apps.INSTALL_TIME);
-		sAppsProjectionMap.put(Apps.STATUS, Apps.STATUS);
-		sAppsProjectionMap.put(Apps.SYNCED_DATE, Apps.SYNCED_DATE);
-		sAppsProjectionMap.put(Apps.CREATED_DATE, Apps.CREATED_DATE);
-		sAppsProjectionMap.put(Apps.MODIFIED_DATE, Apps.MODIFIED_DATE);
+    @Override
+    public int update(Uri uri, ContentValues values, String where, String[] whereArgs) {
+        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        int count;
 
-		// Support for Live Folders.
-		sLiveFolderProjectionMap = new HashMap<String, String>();
-		sLiveFolderProjectionMap.put(LiveFolders._ID, Apps._ID + " AS "
-				+ LiveFolders._ID);
-		sLiveFolderProjectionMap.put(LiveFolders.NAME, Apps.NAME + " AS "
-				+ LiveFolders.NAME);
-		sLiveFolderProjectionMap.put(LiveFolders.DESCRIPTION, Apps.DESCRIPTION
-				+ " AS " + LiveFolders.DESCRIPTION);
-		sLiveFolderProjectionMap.put(LiveFolders.ICON_BITMAP, Apps.ICON + " AS "
-				+ LiveFolders.ICON_BITMAP);
+        Log.d(TAG, "Update " + values.toString());
 
-		// Add more columns here for more robust Live Folders.
-	}
+        switch (sUriMatcher.match(uri)) {
+            case APPS:
+                count = db.update(APPS_TABLE_NAME, values, where, whereArgs);
+                break;
+
+            case APP_ID:
+                String appId = uri.getPathSegments().get(1);
+
+                // values.put(AppsContract.Apps.MODIFIED_DATE,
+                // Long.valueOf(System.currentTimeMillis()));
+
+                count = db.update(APPS_TABLE_NAME, values,
+                        Apps._ID + "=" + appId
+                                + (!TextUtils.isEmpty(where) ? " AND (" + where + ')' : ""),
+                        whereArgs);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unknown URI " + uri);
+        }
+
+        getContext().getContentResolver().notifyChange(uri, null);
+        return count;
+    }
+
+    static {
+        sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+        sUriMatcher.addURI(Apps.AUTHORITY, "apps", APPS);
+        sUriMatcher.addURI(Apps.AUTHORITY, "apps/#", APP_ID);
+        sUriMatcher.addURI(Apps.AUTHORITY, "live_folders/apps", LIVE_FOLDER_APPS);
+
+        sAppsProjectionMap = new HashMap<String, String>();
+        sAppsProjectionMap.put(Apps._ID, Apps._ID);
+        sAppsProjectionMap.put(Apps.ORIGIN, Apps.ORIGIN);
+        sAppsProjectionMap.put(Apps.MANIFEST, Apps.MANIFEST);
+        sAppsProjectionMap.put(Apps.MANIFEST_URL, Apps.MANIFEST_URL);
+        sAppsProjectionMap.put(Apps.NAME, Apps.NAME);
+        sAppsProjectionMap.put(Apps.DESCRIPTION, Apps.DESCRIPTION);
+        sAppsProjectionMap.put(Apps.ICON, Apps.ICON);
+        sAppsProjectionMap.put(Apps.INSTALL_DATA, Apps.INSTALL_DATA);
+        sAppsProjectionMap.put(Apps.INSTALL_ORIGIN, Apps.INSTALL_ORIGIN);
+        sAppsProjectionMap.put(Apps.INSTALL_TIME, Apps.INSTALL_TIME);
+        sAppsProjectionMap.put(Apps.STATUS, Apps.STATUS);
+        sAppsProjectionMap.put(Apps.SYNCED_DATE, Apps.SYNCED_DATE);
+        sAppsProjectionMap.put(Apps.CREATED_DATE, Apps.CREATED_DATE);
+        sAppsProjectionMap.put(Apps.MODIFIED_DATE, Apps.MODIFIED_DATE);
+
+        // Support for Live Folders.
+        sLiveFolderProjectionMap = new HashMap<String, String>();
+        sLiveFolderProjectionMap.put(LiveFolders._ID, Apps._ID + " AS " + LiveFolders._ID);
+        sLiveFolderProjectionMap.put(LiveFolders.NAME, Apps.NAME + " AS " + LiveFolders.NAME);
+        sLiveFolderProjectionMap.put(LiveFolders.DESCRIPTION, Apps.DESCRIPTION + " AS "
+                + LiveFolders.DESCRIPTION);
+        sLiveFolderProjectionMap.put(LiveFolders.ICON_BITMAP, Apps.ICON + " AS "
+                + LiveFolders.ICON_BITMAP);
+
+        // Add more columns here for more robust Live Folders.
+    }
 }

@@ -204,7 +204,7 @@
 	var apps = (navigator.mozApps = navigator.mozApps || {});
 	
 	(function bridgeApps() {
-
+		
 		apps.install = function(url, install_data, onsuccess, onerror) {
 			promise(function() {
 				plugins.mozApps.install(url, install_data, onsuccess, onerror);

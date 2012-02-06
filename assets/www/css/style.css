@@ -1,19 +1,36 @@
 @charset "UTF-8";
 
-html, body {
+html,body {
 	height: 100%;
 }
 
 body {
 	font: 14px/1.6em sans-serif;
 	margin: 0;
-	
 	background-color: #E7EAEC;
-	
 	display: box;
 	display: -webkit-box;
 	box-orient: vertical;
 	-webkit-box-orient: vertical;
+}
+
+@media screen and (-webkit-device-pixel-ratio: 2) {
+	/* high-density screens */
+	body {
+		font-size: 28px;
+	}
+}
+@media screen and (-webkit-device-pixel-ratio: 1.5) {
+	/* high-density screens */
+	body {
+		font-size: 21px;
+	}
+}
+@media screen and (-webkit-device-pixel-ratio: 0.75) {
+	/* low-density screens */
+	body {
+		font-size: 12px;
+	}
 }
 
 header {
@@ -21,10 +38,9 @@ header {
 	height: 2.6em;
 	line-height: 2.6em;
 	background-color: #eee;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#333), color-stop(0.4, #222), to(#111));
-	
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#333),
+		color-stop(0.4, #222), to(#111) );
 	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
-	
 	display: box;
 	display: -webkit-box;
 	box-orient: horizontal;
@@ -34,19 +50,18 @@ header {
 header h1 {
 	margin: 0;
 	padding: 0;
-	
 	font-size: 1em;
 	box-flex: 1;
 	-webkit-box-flex: 1;
 }
+
 header h1 a {
 	padding-left: 2em;
-	background: url(../images/soup.png) no-repeat 0.3em 45%;
+	background: url(../images/ic_launcher_rt.png) no-repeat 0.3em 45%;
 	background-size: 1.4em 1.4em;
-	
 	color: #d5d5d5;
 	font-weight: bold;
-	font-size: 1.6em;
+	font-size: 1.2em;
 }
 
 header a {
@@ -58,21 +73,27 @@ header a {
 	padding-bottom: -0.1em;
 	text-shadow: 0 0 1px rgba(0, 0, 0, 0.9);
 }
-header a:hover, header a:focus {
+
+header a:hover,header a:focus {
 	color: #fff;
 }
-header > a:hover, header > a:focus {
+
+header>a:hover,header>a:focus {
 	color: #000;
 	text-shadow: 0 0 1px rgba(255, 255, 255, 0.9);
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#fff), color-stop(0.4, #eee), to(#ddd));
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#fff),
+		color-stop(0.4, #eee), to(#ddd) );
 }
+
 header img {
 	padding-top: 0.4em;
 }
-header > * {
+
+header>* {
 	border-right: 1px solid rgba(200, 200, 200, 0.1);
 }
-header > *:last-child {
+
+header>*:last-child {
 	border-right: none;
 }
 
@@ -81,9 +102,17 @@ article {
 	box-flex: 1;
 	-webkit-box-flex: 1;
 	overflow: auto;
-	
 	text-align: center;
 	padding: 0.6em 0;
+}
+
+#btn-login {
+	padding: 0.6em 0;
+}
+
+#btn-login img {
+	height: 1.6em;
+	vertical-align: middle;
 }
 
 .app {
@@ -91,7 +120,7 @@ article {
 	display: inline-block;
 	margin: 0.6em 0.3em;
 	padding: 0.3em 0.3em;
-	border-radius: 10px;
+	border-radius: 0.6em;
 }
 
 .app:hover {
@@ -100,10 +129,11 @@ article {
 }
 
 .app img {
-	width: 80px;
-	height: 80px;
-	border-radius: 5px;
+	width: 5em;
+	height: 5em;
+	border-radius: 0.3em;
 }
+
 .app .title {
 	color: #333;
 	font-weight: bold;
@@ -115,4 +145,3 @@ footer {
 	height: 2em;
 	background-color: #333;
 }
-
