@@ -131,6 +131,9 @@ public class SyncService extends IntentService {
             // TODO: Handle incomplete
 
             long until = response.optLong("until");
+            if (until == 0) {
+                until = localSince;
+            }
 
             HashMap<String, JSONObject> serverList = new HashMap<String, JSONObject>();
 
@@ -210,7 +213,7 @@ public class SyncService extends IntentService {
             for (HashMap.Entry<String, JSONObject> entry : toServerList.entrySet()) {
                 String origin = entry.getKey();
 
-                Cursor existing = Apps.findAppByOrigin(this, origin);
+                Cursor existing = Apps.findAppByOrigin(this, origin, false);
 
                 ContentValues values = new ContentValues();
                 values.put(Apps.MODIFIED_DATE, updatedUntil);
@@ -226,7 +229,7 @@ public class SyncService extends IntentService {
                 String origin = entry.getKey();
                 JSONObject serverValue = entry.getValue();
 
-                Cursor existing = Apps.findAppByOrigin(this, origin);
+                Cursor existing = Apps.findAppByOrigin(this, origin, false);
 
                 ContentValues values = Apps.toContentValues(serverValue);
 

@@ -5,33 +5,33 @@ if (window.plugins.mozApps) return;
 function MozApps() {
 };
 
-MozApps.prototype.install = function(url, install_data, onSuccess, onError) {
+MozApps.prototype.install = function(url, parameters, onSuccess, onError) {
   return PhoneGap.exec(
     onSuccess,
     onError,
     'MozAppsPlugin',
     'install',
-    [url, install_data]
+    [url, parameters]
   );
 };
 
-MozApps.prototype.amInstalled = function(onSuccess, onError) {
+MozApps.prototype.getSelf = function(origin, onSuccess, onError) {
   return PhoneGap.exec(
     onSuccess,
     onError,
     'MozAppsPlugin',
-    'amInstalled',
-    []
+    'getSelf',
+    [origin]
   );
 };
 
-MozApps.prototype.amInstalledBy = function(onSuccess, onError) {
+MozApps.prototype.getInstalled = function(origin, onSuccess, onError) {
   return PhoneGap.exec(
     onSuccess,
     onError,
     'MozAppsPlugin',
-    'amInstalledBy',
-    []
+    'getInstalled',
+    [origin]
   );
 };
 

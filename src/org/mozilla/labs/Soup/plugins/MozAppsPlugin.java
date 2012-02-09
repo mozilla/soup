@@ -11,8 +11,8 @@ import org.json.JSONObject;
 import org.mozilla.labs.Soup.R;
 import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.app.SoupApplication;
-import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.http.HttpFactory;
+import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 import android.app.AlertDialog;
@@ -49,11 +49,13 @@ public class MozAppsPlugin extends Plugin {
         Uri originUri = Uri.parse(data.optString(0, webView.getUrl()));
         String origin = originUri.getScheme() + "://" + originUri.getAuthority();
 
-        Cursor cur = Apps.findAppByOrigin(ctx, origin);
+        Cursor cur = null;
 
         try {
 
             if (action.equals("install")) {
+
+                cur = Apps.findAppByOrigin(ctx, origin, false);
 
                 if (cur != null) {
 
@@ -62,6 +64,8 @@ public class MozAppsPlugin extends Plugin {
                         // TODO: Update install_data
 
                         final JSONObject app = Apps.toJSONObject(cur);
+
+                        cur.close();
 
                         Log.d(TAG, "App was installed: " + app);
 
@@ -74,17 +78,21 @@ public class MozAppsPlugin extends Plugin {
                             }
                         });
 
-                        return new PluginResult(Status.OK, app);
+                        return new PluginResult(Status.OK);
                     }
 
                 }
 
                 return install(callback, originUri.toString(), data.optJSONObject(1), origin, cur);
 
-            } else if (action.equals("amInstalled")) {
+            } else if (action.equals("getSelf")) {
+
+                cur = Apps.findAppByOrigin(ctx, origin, false);
 
                 if (cur != null) {
                     JSONObject app = Apps.toJSONObject(cur);
+
+                    cur.close();
 
                     if (app != null) {
                         return new PluginResult(Status.OK, app);
@@ -93,16 +101,34 @@ public class MozAppsPlugin extends Plugin {
                     return new PluginResult(Status.ERROR);
                 }
 
-                return new PluginResult(Status.ERROR);
+                return new PluginResult(Status.OK);
+
+            } else if (action.equals("getInstalled")) {
+
+                cur = Apps.findAppByOrigin(ctx, origin, true);
+                JSONArray list = new JSONArray();
+
+                if (cur != null) {
+                    
+                    while (cur.isAfterLast() == false) {
+                        JSONObject app = Apps.toJSONObject(cur);
+
+                        if (app != null) {
+                            list.put(app);
+                        }
+
+                        cur.moveToNext();
+                    }
+
+                    cur.close();
+                }
+
+                return new PluginResult(Status.OK, list);
             }
 
         } catch (Exception e) {
             Log.w(TAG, action + " failed", e);
             return new PluginResult(Status.JSON_EXCEPTION);
-        }
-
-        if (cur != null) {
-            cur.close();
         }
 
         return new PluginResult(Status.INVALID_ACTION);
@@ -117,6 +143,7 @@ public class MozAppsPlugin extends Plugin {
 
                 ProgressDialog dlg = ProgressDialog.show(ctx, null, "Preparing installation", true,
                         true);
+                dlg.show();
 
                 // TODO: More error codes (JSON vs IO)
                 JSONObject manifest = HttpFactory.getManifest(ctx, manifestUri);
@@ -128,7 +155,8 @@ public class MozAppsPlugin extends Plugin {
 
                     JSONObject errorEvent = null;
                     try {
-                        errorEvent = new JSONObject().put("code", "networkError").put("message",
+                        errorEvent = new JSONObject().put("message", "NETWORK_ERROR").put(
+                                "message",
                                 "networkError");
                     } catch (JSONException e) {
                     }
@@ -174,6 +202,12 @@ public class MozAppsPlugin extends Plugin {
                 values.put(Apps.ORIGIN, origin);
                 values.put(Apps.MANIFEST_URL, manifestUri);
                 values.put(Apps.MANIFEST, manifest.toString());
+                
+                // TODO: Fails for iframes
+                Uri originUri = Uri.parse(webView.getUrl());
+                String origin = originUri.getScheme() + "://" + originUri.getAuthority();
+                
+                values.put(Apps.INSTALL_ORIGIN, origin);
 
                 if (install_data != null) {
                     values.put(Apps.INSTALL_DATA, install_data.toString());
@@ -216,7 +250,7 @@ public class MozAppsPlugin extends Plugin {
 
                                 JSONObject errorEvent = null;
                                 try {
-                                    errorEvent = new JSONObject().put("code", "denied").put(
+                                    errorEvent = new JSONObject().put("message", "DENIED").put(
                                             "message", "denied");
                                 } catch (JSONException e) {
                                 }
@@ -237,7 +271,7 @@ public class MozAppsPlugin extends Plugin {
                                 if (uri == null) {
                                     JSONObject errorEvent = null;
                                     try {
-                                        errorEvent = new JSONObject().put("code", "denied").put(
+                                        errorEvent = new JSONObject().put("message", "DENIED").put(
                                                 "message", "denied");
                                     } catch (JSONException e) {
                                     }

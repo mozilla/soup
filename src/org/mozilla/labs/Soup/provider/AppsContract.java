@@ -127,8 +127,8 @@ public final class AppsContract {
         public static final String MODIFIED_DATE = "modified_date";
 
         public final static String[] APP_PROJECTION = new String[] {
-                Apps._ID, Apps.ORIGIN, Apps.MANIFEST, Apps.INSTALL_DATA, Apps.INSTALL_ORIGIN,
-                Apps.INSTALL_TIME, Apps.MODIFIED_DATE, Apps.STATUS
+                Apps._ID, Apps.ORIGIN, Apps.MANIFEST, Apps.MANIFEST_URL, Apps.INSTALL_DATA,
+                Apps.INSTALL_ORIGIN, Apps.INSTALL_TIME, Apps.MODIFIED_DATE, Apps.STATUS
         };
 
         public static JSONObject toJSONObject(Cursor cur) {
@@ -152,6 +152,7 @@ public final class AppsContract {
             try {
                 app.put("origin", cur.getString(cur.getColumnIndex(Apps.ORIGIN)));
                 app.put("manifest", new JSONObject(manifest));
+                app.put("manifest_url", cur.getString(cur.getColumnIndex(Apps.MANIFEST_URL)));
                 app.put("install_data", cur.getString(cur.getColumnIndex(Apps.INSTALL_DATA)));
                 app.put("install_origin", cur.getString(cur.getColumnIndex(Apps.INSTALL_ORIGIN)));
                 app.put("install_time",
@@ -244,12 +245,23 @@ public final class AppsContract {
         }
 
         public static Cursor findAppByOrigin(Context ctx, String origin) {
+            return findAppByOrigin(ctx, origin, false);
+        }
+
+        public static Cursor findAppByOrigin(Context ctx, String origin, Boolean installOrigin) {
+
+            String field = Apps.ORIGIN;
+            if (installOrigin) {
+                field = Apps.INSTALL_ORIGIN;
+            }
+
             Cursor cur = ctx.getContentResolver().query(Apps.CONTENT_URI, Apps.APP_PROJECTION,
-                    Apps.ORIGIN + " = ?", new String[] {
+                    field + " = ?", new String[] {
                         origin
                     }, Apps.DEFAULT_SORT_ORDER);
 
             if (cur.moveToFirst() == false) {
+                cur.close();
                 return null;
             }
 

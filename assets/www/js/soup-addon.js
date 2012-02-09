@@ -4,26 +4,13 @@
 	
 	var plugins = (window.plugins = window.plugins || {}), empty = function() {};
 	
-	function logPhonegapChannel(name) {
-		if (PhoneGap[name].fired) {
-			console.log(name + ' FIRED');
-		} else {
-			console.log(name + ' pending');
-			PhoneGap[name].subscribeOnce(function() {
-				console.log(name + ': FIRED delayed');
-			})
-		}
-	};
-	
+
 	function promise(cb) {
 		// Fix post-load injected phonegap dependence on onDOMContentLoaded
 		if (window.PhoneGap) {
 			if (PhoneGap.onPhoneGapInit.fired) {
-				console.log('promise instant FIRE');
-				return cb();
+				setTimeout(cb, 1);
 			} else {
-				console.log('promise delayed');
-				
 				PhoneGap.onPhoneGapInit.subscribeOnce(cb);
 				
 				if (!PhoneGap.onNativeReady.fired) PhoneGap.onNativeReady.fire();
@@ -56,7 +43,7 @@
 					if (evt.assertion) {
 						setTimeout(function() {
 							callback(evt.assertion);
-						}, 10);
+						}, 1);
 						return;
 					}
 					
@@ -75,13 +62,15 @@
 						evt.stopPropagation();
 						
 						if (timer) {
-							console.log("getVerifiedEmail cleaned postMessage setInterval");
+							console.log("getVerifiedEmail received callback from popup");
 							clearInterval(timer);
 							timer = null;
 						}
 			
-						if (evt.origin != origin || evt.data === false || !popup)
+						if (evt.origin != origin || evt.data === false || !popup) {
+							console.log("getVerifiedEmail dropped callback");
 							return;
+						}
 						
 						window.removeEventListener('message', onmessage, false);
 						
@@ -110,7 +99,6 @@
 			});
 		};
 
-		console.log('soup-addon.js bridged *id* on ' + (location.host || location));
 	})();
 
 
@@ -193,7 +181,6 @@
 			}, false);
 		}
 
-		console.log('soup-addon.js bridged *id.channel* on ' + (location.host || location));
 	})();
 
 	
@@ -205,51 +192,193 @@
 	
 	(function bridgeApps() {
 		
-		apps.install = function(url, install_data, onsuccess, onerror) {
+		// Application
+		
+		function Application(app) {
+			
+			console.log('new Application: ' + JSON.stringify(app));
+
+			this.manifest = app.manifest;
+			this.manifestURL = app.manifestURL || app.manifest_url;
+			
+			this.origin = app.origin;
+			this.installOrigin = app.installOrigin || app.install_origin;
+			this.installTime = app.installTime || app.install_time;
+			
+			var data = app.installData || app.install_data;
+			
+			if (data) {
+				if (data.receipts) {
+					this.receipts = data.receipts;
+				} else if (data.receipts) {
+					this.receipts = [data.receipt];
+				}
+			}
+		};
+		
+		Application.prototype.launch = function(startPoint) {
+			
+			var stub = new RequestStub();
+			var origin = this.origin;
+			
 			promise(function() {
-				plugins.mozApps.install(url, install_data, onsuccess, onerror);
+				plugins.mozAppsMgmt.launch(origin, stub.success, stub.error);
 			});
+			
+			return stub.request;
+			
+		};
+		
+		Application.prototype.uninstall = function() {
+			throw new Error('NOT_IMPLEMENTED');
+		};
+		
+		Application.toApp = function(app) {
+			return new Application(app);
+		};
+		
+		// Request
+		
+		function Request() {};
+		
+		Request.prototype.result = null;
+		Request.prototype.error = null;
+		Request.prototype.onerror = null;
+		Request.prototype.onsuccess = null;
+		
+		function RequestStub() {
+			
+			var request = new Request();
+			
+			return {
+				success: function(result) {
+					console.log('RequestStub SUCCESS ' + JSON.stringify(result));
+					
+					if (result) {
+						if (Array.isArray(result)) {
+							result = result.map(Application.toApp);
+						} else {
+							result = Application.toApp(result);
+						}
+					}
+					
+					request.result = result;
+					if (request.onsuccess) {
+						request.onsuccess();
+					}
+				},
+				error: function(error) {
+					console.log('RequestStub ERROR ' + error);
+					
+					request.error = error;
+					
+					if (request.onerror) {
+						request.onerror();
+					}
+				},
+				request: request
+			};
+			
+		};
+		
+		
+		apps.install = function(manifestUrl, parameters) {
+			
+			var stub = new RequestStub();
+			
+			promise(function() {
+				plugins.mozApps.install(manifestUrl, parameters, stub.success, stub.error);
+			});
+			
+			return stub.request;
+		};
+		
+		apps.getSelf = function() {
+			
+			var stub = new RequestStub();
+			
+			promise(function() {
+				plugins.mozApps.getSelf(location.protocol + '//' + location.host, stub.success, stub.error);
+			});
+			
+			return stub.request;
 		};
 
-		apps.amInstalled = function(onsuccess, onerror) {
+		apps.getInstalled = function() {
+			var stub = new RequestStub();
+			
 			promise(function() {
-				plugins.mozApps.amInstalled(onsuccess, onerror);
+				plugins.mozApps.getInstalled(location.protocol + '//' + location.host, stub.success, stub.error);
 			});
-		};
-
-		apps.enumerate = apps.getInstalledBy = function(onsuccess, onerror) {
-			promise(function() {
-				plugins.mozAppsMgmt.list(onsuccess, onerror);
-			});
+			
+			return stub.request;
 		};
 
 		apps.mgmt = apps.mgmt || {};
+		
+		var polling = false;
 
-		apps.mgmt.list = function(onsuccess, onerror) {
+		apps.mgmt.getAll = function() {
+			
+			var stub = new RequestStub();
+			
 			promise(function() {
-				plugins.mozAppsMgmt.list(onsuccess, onerror);
+				plugins.mozAppsMgmt.getAll(stub.success, stub.error);
+				
+				if (!polling) {
+					setInterval(function() {
+						plugins.mozAppsMgmt.sync();
+					}, 1000 * 15);
+				}
 			});
+			
+			return stub.request;
+		};
+		
+		var mgmtListeners = {};
+		
+		apps.mgmt.addEventListener = function(name, callback) {
+			mgmtListeners[name] = mgmtListeners[name] || [];
+			mgmtListeners[name].push(callback);
 		};
 
-		apps.mgmt.launch = function(origin, onsuccess, onerror) {
-			promise(function() {
-				plugins.mozAppsMgmt.launch(origin, onsuccess, onerror);
-			});
-		};
-
-		apps.mgmt.watchUpdates = function(onsuccess) {
-			return promise(function() {	
-				return plugins.mozAppsMgmt.watchUpdates(onsuccess);
+		apps.mgmt.removeEventListener = function(name, callback) {
+			mgmtListeners[name] = (mgmtListeners[name] || []).filter(function(fn) {
+				return fn != callback;
 			});
 		};
 		
-		apps.mgmt.clearWatch = function(id) {
-			return promise(function() {
-				return plugins.mozAppsMgmt.clearWatch(id);
+		function fireEventListener(name, app) {
+			var callbacks = (mgmtListeners[name] || []).splice(0);
+			
+			if (apps.mgmt['on' + name]) {
+				callbacks.push(apps.mgmt['on' + name]);
+			}
+			
+			callbacks.forEach(function(callback) {
+				setTimeout(function() {
+					callback.call(apps.mgmt, {application: app});
+				}, 1);
 			});
 		};
 		
-		console.log('soup-addon.js bridged *apps* on ' + (location.host || location));
+		promise(function() {
+			plugins.mozAppsMgmt.watchUpdates(function(installed, uninstalled) {
+				console.log('watchUpdates ' + JSON.stringify([installed, uninstalled]));
+				
+				if (Array.isArray(installed) && installed.length) {
+					installed.forEach(function(app) {
+						fireEventListener('install', app);
+					});
+				}
+				
+				if (Array.isArray(uninstalled) && uninstalled.length) {
+					uninstalled.forEach(function(app) {
+						fireEventListener('uninstall', app);
+					});
+				}
+			});
+		});
 
 	})();
 

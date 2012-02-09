@@ -5,12 +5,12 @@ if (window.plugins.mozAppsMgmt) return;
 function MozAppsMgmt() {
 };
 
-MozAppsMgmt.prototype.list = function(onSuccess, onError) {
+MozAppsMgmt.prototype.getAll = function(onSuccess, onError) {
   return PhoneGap.exec(
     onSuccess,
     onError,
     'MozAppsMgmtPlugin',
-    'list',
+    'getAll',
     []
   );
 };
@@ -42,6 +42,16 @@ MozAppsMgmt.prototype.clearWatch = function(id) {
     'MozAppsMgmtPlugin',
     'clearWatch',
     [id]
+  );
+};
+
+MozAppsMgmt.prototype.sync = function() {
+  return PhoneGap.exec(
+    null,
+    null,
+    'MozAppsMgmtPlugin',
+    'sync',
+    []
   );
 };
 
