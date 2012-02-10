@@ -1,10 +1,6 @@
 
 package org.mozilla.labs.Soup.plugins;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -109,7 +105,7 @@ public class MozAppsPlugin extends Plugin {
                 JSONArray list = new JSONArray();
 
                 if (cur != null) {
-                    
+
                     while (cur.isAfterLast() == false) {
                         JSONObject app = Apps.toJSONObject(cur);
 
@@ -143,7 +139,6 @@ public class MozAppsPlugin extends Plugin {
 
                 ProgressDialog dlg = ProgressDialog.show(ctx, null, "Preparing installation", true,
                         true);
-                dlg.show();
 
                 // TODO: More error codes (JSON vs IO)
                 JSONObject manifest = HttpFactory.getManifest(ctx, manifestUri);
@@ -158,6 +153,10 @@ public class MozAppsPlugin extends Plugin {
                         errorEvent = new JSONObject().put("message", "NETWORK_ERROR");
                     } catch (JSONException e) {
                     }
+
+                    Toast.makeText(ctx, "Could not reach " + Uri.parse(manifestUri).getHost(),
+                            Toast.LENGTH_SHORT).show();
+
                     error(new PluginResult(Status.ERROR, errorEvent), callbackId);
 
                     return;
@@ -170,42 +169,24 @@ public class MozAppsPlugin extends Plugin {
                 values.put(Apps.NAME, name);
                 values.put(Apps.DESCRIPTION, description);
 
-                Bitmap icon = null;
-                JSONObject icons = manifest.optJSONObject("icons");
-
-                if (icons != null && icons.length() > 0) {
-                    JSONArray sizes = icons.names();
-
-                    List<Integer> sizesSort = new ArrayList<Integer>();
-                    for (int i = 0, l = sizes.length(); i < l; i++) {
-                        sizesSort.add(sizes.optInt(i));
-                    }
-                    String max = Collections.max(sizesSort).toString();
-
-                    String iconUrl = origin + icons.optString(max);
-
-                    Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
-
-                    icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
-                }
-
-                final Bitmap bitmap = icon;
+                final Bitmap bitmap = Apps.fetchIconByApp(origin, manifest);
 
                 if (bitmap != null) {
                     values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
                 } else {
-                    Log.w(TAG, "Could not load icon from " + icons);
+                    Log.w(TAG, "Could not load icon");
                 }
 
                 values.put(Apps.ORIGIN, origin);
                 values.put(Apps.MANIFEST_URL, manifestUri);
                 values.put(Apps.MANIFEST, manifest.toString());
-                
+
                 // TODO: Fails for iframes
-                Uri originUri = Uri.parse(webView.getUrl());
-                String origin = originUri.getScheme() + "://" + originUri.getAuthority();
-                
-                values.put(Apps.INSTALL_ORIGIN, origin);
+                Uri installOriginUri = Uri.parse(webView.getUrl());
+                String installOrigin = installOriginUri.getScheme() + "://"
+                        + installOriginUri.getAuthority();
+
+                values.put(Apps.INSTALL_ORIGIN, installOrigin);
 
                 if (install_data != null) {
                     values.put(Apps.INSTALL_DATA, install_data.toString());
@@ -283,7 +264,6 @@ public class MozAppsPlugin extends Plugin {
                                 shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
                                 shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                 shortcutIntent.putExtra("uri", launchUri);
-                                shortcutIntent.putExtra("app_uri", uri);
 
                                 // TODO: Move one more place to sync
                                 ((SoupApplication)ctx.getApplication()).triggerSync();

@@ -23,13 +23,17 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.labs.Soup.app.AppActivity;
 import org.mozilla.labs.Soup.http.ImageFactory;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
@@ -170,7 +174,7 @@ public final class AppsContract {
             return app;
         }
 
-        public static ContentValues toContentValues(final JSONObject app) {
+        public static ContentValues toContentValues(Context ctx, final JSONObject app, Boolean install) {
 
             String origin = app.optString("origin");
             JSONObject manifest = app.optJSONObject("manifest");
@@ -181,31 +185,17 @@ public final class AppsContract {
             }
 
             ContentValues values = new ContentValues();
+            
+            Bitmap bitmap = null;
 
             if (manifest != null) {
                 values.put(Apps.NAME, manifest.optString("name"));
                 values.put(Apps.DESCRIPTION, manifest.optString("description"));
 
-                Bitmap icon = null;
-                JSONObject icons = manifest.optJSONObject("icons");
+                bitmap = Apps.fetchIconByApp(origin, manifest);
 
-                if (icons != null && icons.length() > 0) {
-                    JSONArray sizes = icons.names();
-
-                    List<Integer> sizesSort = new ArrayList<Integer>();
-                    for (int i = 0, l = sizes.length(); i < l; i++) {
-                        sizesSort.add(sizes.optInt(i));
-                    }
-                    String max = Collections.max(sizesSort).toString();
-
-                    String iconUrl = origin + icons.optString(max);
-                    icon = ImageFactory.getResizedImage(iconUrl, 72, 72);
-                }
-
-                if (icon != null) {
-                    values.put(Apps.ICON, ImageFactory.bitmapToBytes(icon));
-                } else {
-                    Log.w(TAG, "Could not load icon from " + icons);
+                if (bitmap != null) {
+                    values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
                 }
 
                 values.put(Apps.MANIFEST_URL, app.optString("manifest_url"));
@@ -240,6 +230,40 @@ public final class AppsContract {
             } else {
                 values.put(Apps.INSTALL_DATA, new JSONObject().toString());
             }
+            
+            if (manifest != null && install) {
+                
+                String launchUri = origin;
+                if (manifest.has("launch_path")) {
+                    launchUri += manifest.optString("launch_path");
+                }
+
+                Intent shortcutIntent = new Intent(ctx, AppActivity.class);
+                shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
+                shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                shortcutIntent.putExtra("uri", launchUri);
+
+                final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+
+                if (prefs.getBoolean("install_shortcut", true)) {
+                    Log.d(TAG, "Install creates shortcut");
+
+                    Intent intent = new Intent();
+                    intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+                    intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+                    intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, manifest.optString("name", "No Name"));
+                    if (bitmap != null) {
+                        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
+                    }
+                    // Disallow the creation of duplicate
+                    // shortcuts (i.e. same
+                    // url, same title, but different screen
+                    // position).
+                    intent.putExtra("duplicate", false);
+
+                    ctx.sendBroadcast(intent);
+                }
+            }
 
             return values;
         }
@@ -266,6 +290,29 @@ public final class AppsContract {
             }
 
             return cur;
+        }
+
+        public static Bitmap fetchIconByApp(String origin, JSONObject manifest) {
+
+            JSONObject icons = manifest.optJSONObject("icons");
+
+            if (icons == null || icons.length() == 0) {
+                return null;
+            }
+
+            JSONArray sizes = icons.names();
+
+            List<Integer> sizesSort = new ArrayList<Integer>();
+            for (int i = 0, l = sizes.length(); i < l; i++) {
+                sizesSort.add(sizes.optInt(i));
+            }
+            String max = Collections.max(sizesSort).toString();
+
+            String iconUrl = origin + icons.optString(max);
+
+            Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
+
+            return ImageFactory.getResizedImage(iconUrl, 72, 72);
         }
 
     }

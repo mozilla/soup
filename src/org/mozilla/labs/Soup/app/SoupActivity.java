@@ -7,6 +7,7 @@ import java.io.InputStream;
 import org.mozilla.labs.Soup.R;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -59,7 +60,9 @@ public abstract class SoupActivity extends DroidGap {
 
     private WebView childView = null;
 
-    private View titleView;
+    private View titleView = null;
+
+    public ProgressDialog progressDialog = null;
 
     private class SoupChildViewClient extends WebViewClient {
 
@@ -82,6 +85,8 @@ public abstract class SoupActivity extends DroidGap {
 
                 Log.d(TAG, uri.getAuthority() + " | " + identityUri.getAuthority() + ", " + email);
 
+                // FIXME: Review this code after proper "native" BrowserID
+                // integration
                 if (uri.getAuthority().equals(identityUri.getAuthority())
                         && !TextUtils.isEmpty(email)) {
 
@@ -89,6 +94,10 @@ public abstract class SoupActivity extends DroidGap {
                     childView.setVisibility(View.GONE);
 
                     appView.setVisibility(View.VISIBLE);
+
+                    progressDialog = ProgressDialog.show(SoupActivity.this, null,
+                            "Verifying user …",
+                            true, false);
 
                     gotHidden = true;
                 }
@@ -674,6 +683,11 @@ public abstract class SoupActivity extends DroidGap {
         childView.destroy();
 
         root.removeView(childRoot);
+
+        if (progressDialog != null) {
+            progressDialog.dismiss();
+            progressDialog = null;
+        }
 
         titleView.setVisibility(View.VISIBLE);
 

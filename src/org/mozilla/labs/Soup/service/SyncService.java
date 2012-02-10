@@ -231,7 +231,7 @@ public class SyncService extends IntentService {
 
                 Cursor existing = Apps.findAppByOrigin(this, origin, false);
 
-                ContentValues values = Apps.toContentValues(serverValue);
+                ContentValues values = Apps.toContentValues(this, serverValue, existing == null);
 
                 // TODO: Set better updatedUntil (get latest date from sync
                 // server)
@@ -239,6 +239,7 @@ public class SyncService extends IntentService {
 
                 if (existing == null) {
                     installed++;
+
                     getContentResolver().insert(Apps.CONTENT_URI, values);
                 } else {
                     updated++;
