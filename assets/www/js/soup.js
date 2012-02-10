@@ -82,7 +82,7 @@ soup.App = (function() {
 	};
 	
 	App.prototype.launch = function() {
-		moveByy
+
 		this.data.launch();
 		
 	};
