@@ -155,9 +155,7 @@ public class MozAppsPlugin extends Plugin {
 
                     JSONObject errorEvent = null;
                     try {
-                        errorEvent = new JSONObject().put("message", "NETWORK_ERROR").put(
-                                "message",
-                                "networkError");
+                        errorEvent = new JSONObject().put("message", "NETWORK_ERROR");
                     } catch (JSONException e) {
                     }
                     error(new PluginResult(Status.ERROR, errorEvent), callbackId);
@@ -271,8 +269,7 @@ public class MozAppsPlugin extends Plugin {
                                 if (uri == null) {
                                     JSONObject errorEvent = null;
                                     try {
-                                        errorEvent = new JSONObject().put("message", "DENIED").put(
-                                                "message", "denied");
+                                        errorEvent = new JSONObject().put("message", "DENIED");
                                     } catch (JSONException e) {
                                     }
                                     error(new PluginResult(Status.ERROR, errorEvent), callbackId);

@@ -146,6 +146,11 @@ public class MozIdPlugin extends Plugin {
     public PluginResult postVerify(final JSONArray data, final String callbackId) throws Exception {
 
         if (data.isNull(1) || TextUtils.isEmpty(data.optString(1))) {
+
+            // Remove email to start a fresh flow
+            final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+            prefs.edit().remove("email").commit();
+
             ctx.runOnUiThread(new Runnable() {
 
                 public void run() {

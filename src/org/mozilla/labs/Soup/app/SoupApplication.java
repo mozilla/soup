@@ -37,6 +37,33 @@ public class SoupApplication extends Application {
          */
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        final Boolean welcomed = prefs.getBoolean("welcomed", false);
+
+        if (!welcomed) {
+
+            prefs.edit().putBoolean("welcomed", true).commit();
+
+            Intent shortcutIntent = LiveFolderActivity.createLiveFolder(this);
+
+            Intent intent = new Intent();
+            intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+            intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+
+            intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.app_name_live));
+            intent.putExtra(Intent.EXTRA_SHORTCUT_ICON,
+                    Intent.ShortcutIconResource.fromContext(this, R.drawable.ic_launcher_rt));
+
+            // Disallow the creation of duplicate
+            // shortcuts (i.e. same
+            // url, same title, but different screen
+            // position).
+            intent.putExtra("duplicate", false);
+
+            sendBroadcast(intent);
+        }
+
+
         syncManager = new SyncManager();
     }
 

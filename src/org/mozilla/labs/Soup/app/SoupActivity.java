@@ -10,11 +10,13 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
@@ -61,7 +63,39 @@ public abstract class SoupActivity extends DroidGap {
 
     private class SoupChildViewClient extends WebViewClient {
 
+        private boolean gotHidden = false;
+
         public SoupChildViewClient() {
+        }
+
+        @Override
+        public void onLoadResource(WebView view, String url) {
+
+            Uri uri = Uri.parse(url);
+
+            if (!gotHidden && uri != null) {
+
+                final SharedPreferences prefs = PreferenceManager
+                        .getDefaultSharedPreferences(SoupActivity.this);
+                final Uri identityUri = Uri.parse(prefs.getString("dev_identity", ""));
+                final String email = prefs.getString("email", null);
+
+                Log.d(TAG, uri.getAuthority() + " | " + identityUri.getAuthority() + ", " + email);
+
+                if (uri.getAuthority().equals(identityUri.getAuthority())
+                        && !TextUtils.isEmpty(email)) {
+
+                    titleView.setVisibility(View.GONE);
+                    childView.setVisibility(View.GONE);
+
+                    appView.setVisibility(View.VISIBLE);
+
+                    gotHidden = true;
+                }
+
+            }
+
+            super.onLoadResource(view, url);
         }
 
         /**
