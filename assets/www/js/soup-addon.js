@@ -9,7 +9,7 @@
 		// Fix post-load injected phonegap dependence on onDOMContentLoaded
 		if (window.PhoneGap) {
 			if (PhoneGap.onPhoneGapInit.fired) {
-				setTimeout(cb, 1);
+				cb();
 			} else {
 				PhoneGap.onPhoneGapInit.subscribeOnce(cb);
 				
@@ -43,7 +43,7 @@
 					if (evt.assertion) {
 						setTimeout(function() {
 							callback(evt.assertion);
-						}, 1);
+						}, 10);
 						return;
 					}
 					
@@ -328,7 +328,23 @@
 				if (!polling) {
 					setInterval(function() {
 						plugins.mozAppsMgmt.sync();
-					}, 1000 * 15);
+					}, 1000 * 60);
+					
+					plugins.mozAppsMgmt.watchUpdates(function(installed, uninstalled) {
+						console.log('watchUpdates ' + JSON.stringify([installed, uninstalled]));
+						
+						if (Array.isArray(installed) && installed.length) {
+							installed.forEach(function(app) {
+								fireEventListener('install', app);
+							});
+						}
+						
+						if (Array.isArray(uninstalled) && uninstalled.length) {
+							uninstalled.forEach(function(app) {
+								fireEventListener('uninstall', app);
+							});
+						}
+					});
 				}
 			});
 			
@@ -362,24 +378,6 @@
 			});
 		};
 		
-		promise(function() {
-			plugins.mozAppsMgmt.watchUpdates(function(installed, uninstalled) {
-				console.log('watchUpdates ' + JSON.stringify([installed, uninstalled]));
-				
-				if (Array.isArray(installed) && installed.length) {
-					installed.forEach(function(app) {
-						fireEventListener('install', app);
-					});
-				}
-				
-				if (Array.isArray(uninstalled) && uninstalled.length) {
-					uninstalled.forEach(function(app) {
-						fireEventListener('uninstall', app);
-					});
-				}
-			});
-		});
-
 	})();
 
 	// END bridge

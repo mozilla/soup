@@ -99,11 +99,11 @@ soup.App = (function() {
 
 		var container = document.getElementById('myapps');
 		
-		if (!append) {
+		if (!append || !container.getElementsByTagName('div').length) {
 			container.innerHTML = '';
 			
 			if (!list || !list.length) {
-				container.innerHTML = 'No local apps, watching for sync updates …';
+				container.textContent = 'No installed apps, watching for sync updates …';
 				return;
 			}
 		}
