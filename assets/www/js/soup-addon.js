@@ -330,18 +330,19 @@
 						plugins.mozAppsMgmt.sync();
 					}, 1000 * 60);
 					
-					plugins.mozAppsMgmt.watchUpdates(function(installed, uninstalled) {
-						console.log('watchUpdates ' + JSON.stringify([installed, uninstalled]));
+					plugins.mozAppsMgmt.watchUpdates(function(lists) {
+						var installed = lists[0] || [];
+						var uninstalled = lists[1] || [];
 						
 						if (Array.isArray(installed) && installed.length) {
 							installed.forEach(function(app) {
-								fireEventListener('install', app);
+								fireEventListener('install', Application.toApp(app));
 							});
 						}
 						
 						if (Array.isArray(uninstalled) && uninstalled.length) {
 							uninstalled.forEach(function(app) {
-								fireEventListener('uninstall', app);
+								fireEventListener('uninstall', Application.toApp(app));
 							});
 						}
 					});
@@ -381,6 +382,7 @@
 	})();
 
 	// END bridge
+	
 	
 	console.log('soup-addon.js bridged on ' + (location.host || location));
 	

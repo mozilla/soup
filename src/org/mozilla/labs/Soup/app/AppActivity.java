@@ -55,7 +55,7 @@ public class AppActivity extends SoupActivity {
 	public void onDestroy() {
 		super.onDestroy();
 
-		Toast.makeText(this, "Closing app", Toast.LENGTH_SHORT).show();
+        // Toast.makeText(this, "App closed", Toast.LENGTH_SHORT).show();
 	}
 
 }

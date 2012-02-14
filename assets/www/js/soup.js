@@ -17,14 +17,14 @@ soup.App = (function() {
 	
 	function App(data) {
 		
-		console.log('new App: ' + JSON.stringify(data));
-		
 		this.data = data;
 		this.manifest = data.manifest;
 		
 		this.origin = this.manifest.origin;
 		
 		App.list[this.origin] = this;
+		
+		console.log('new App: ' + JSON.stringify(this.manifest));
 		
 	};
 	
@@ -143,6 +143,7 @@ document.addEventListener('deviceready', function() {
 			if (assertion) {
 				var pending = navigator.mozApps.mgmt.getAll();
 				pending.onsuccess = function() {
+					console.log('navigator.mozApps.mgmt.getAll ' + pending.result.length);
 					soup.App.renderList(pending.result);
 				};
 				pending.onerror = function() {
@@ -150,11 +151,11 @@ document.addEventListener('deviceready', function() {
 				};
 
 				navigator.mozApps.mgmt.oninstall = function(evt) {
-					console.log('navigator.mozApps.mgmt.oninstall')
+					console.log('navigator.mozApps.mgmt.oninstall');
 					soup.App.renderList(evt.application, true);
 				};
 				navigator.mozApps.mgmt.onuninstall = function(evt) {
-					console.log('navigator.mozApps.mgmt.onuninstall')
+					console.log('navigator.mozApps.mgmt.onuninstall');
 					soup.App.removeFromList(evt.application);
 				};
 			} else {

@@ -320,12 +320,21 @@ public abstract class SoupActivity extends DroidGap {
 
             // FIXME: This is a phonegap issue when using loadUrl to inject JS
             // on redirecting pages
-            if (url == null || url.equals("about:blank")) {
+            if (TextUtils.isEmpty(url) || url.equals("about:blank")) {
+
+                Log.w(TAG, "SoupChromeClient: Prevented prompt for " + url);
+
                 result.cancel();
+
                 return true;
             }
 
-            return super.onJsPrompt(view, url, message, defaultValue, result);
+            boolean ret = super.onJsPrompt(view, url, message, defaultValue, result);
+
+            if (defaultValue != null && defaultValue.startsWith("gap")) {
+            }
+
+            return ret;
         }
 
         /*
