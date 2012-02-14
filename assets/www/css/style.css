@@ -99,9 +99,6 @@ header>*:last-child {
 
 article {
 	display: block;
-	box-flex: 1;
-	-webkit-box-flex: 1;
-	overflow: auto;
 	text-align: center;
 	padding: 0.6em 0;
 }
@@ -136,8 +133,11 @@ article {
 
 .app .title {
 	color: #333;
-	font-weight: bold;
-	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+	white-space: nowrap;
+	width: 6em;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 footer {

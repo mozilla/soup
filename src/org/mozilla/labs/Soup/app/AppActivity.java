@@ -1,6 +1,7 @@
 package org.mozilla.labs.Soup.app;
 
 import android.content.Intent;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -19,15 +20,16 @@ public class AppActivity extends SoupActivity {
 		Log.d(TAG, "onResolveIntent " + intent);
 
 		if (ACTION_WEBAPP.equals(action)) {
-			if (!intent.hasExtra("uri")) {
-				Toast.makeText(this, "Could not find app", Toast.LENGTH_SHORT).show();
+
+            String uri = intent.getDataString();
+
+            if (TextUtils.isEmpty(uri)) {
+                Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show();
 
 				Intent redirect = new Intent(this, LauncherActivity.class);
 				startActivity(redirect);
 				return;
 			}
-
-			final String uri = intent.getStringExtra("uri");
 
 			boolean didInitialize = onCreateLayout();
 
@@ -40,6 +42,7 @@ public class AppActivity extends SoupActivity {
 				// Hide old app
 				appView.setVisibility(View.INVISIBLE);
 			}
+
 
 			Log.d(TAG, "onResolveIntent loading " + uri);
 

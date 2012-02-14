@@ -308,6 +308,12 @@ public final class AppsContract {
             }
             String max = Collections.max(sizesSort).toString();
 
+            String data = icons.optString(max);
+
+            if (Uri.parse(data).getScheme() == null) { // base64 string
+
+            }
+
             String iconUrl = origin + icons.optString(max);
 
             Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);

@@ -16,6 +16,7 @@ import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -118,13 +119,15 @@ public class MozAppsMgmtPlugin extends Plugin implements Observer {
         }
 
         String origin = cur.getString(cur.getColumnIndex(Apps.ORIGIN));
-        String uri = origin + manifest.optString("launch_path");
+        String uri = origin + manifest.optString("launch_path", "/");
         final String name = manifest.optString("name");
 
         final Intent shortcutIntent = new Intent(this.ctx, AppActivity.class);
         shortcutIntent.setAction(AppActivity.ACTION_WEBAPP);
+
         shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        shortcutIntent.putExtra("uri", uri);
+
+        shortcutIntent.setData(Uri.parse(uri));
 
         ctx.runOnUiThread(new Runnable() {
             public void run() {

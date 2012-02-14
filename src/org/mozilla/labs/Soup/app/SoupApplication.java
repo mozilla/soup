@@ -12,6 +12,7 @@ import org.mozilla.labs.Soup.service.SyncService;
 import android.app.Application;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -65,6 +66,10 @@ public class SoupApplication extends Application {
         syncManager = new SyncManager();
     }
 
+    public boolean isDebuggable() {
+        return (0 != (getApplicationInfo().flags &= ApplicationInfo.FLAG_DEBUGGABLE));
+    }
+
     @Override
     public void onTerminate() {
         Log.d(TAG, "TERMINATED");
@@ -73,9 +78,26 @@ public class SoupApplication extends Application {
     }
 
     public void registerActivity(SoupActivity activity) {
-        if (!activities.contains(activity)) {
-            activities.add(activity);
+
+        if (activities.contains(activity)) {
+            return;
         }
+
+        activities.add(activity);
+
+        /*
+         * Log.d(TAG, "New activity"); for (SoupActivity act : activities) {
+         * Log.d(TAG, "registeredActivity: " + act.getTitle()); } if
+         * (activity.getClass() == AppActivity.class) { Intent intent =
+         * activity.getIntent(); for (SoupActivity value : activities) { Intent
+         * valueIntent = value.getIntent(); if (valueIntent == null ||
+         * !value.getIntent().getData().equals(intent.getData())) { break; }
+         * Log.d(TAG, "Found instance of Intent " + intent); activity.finish();
+         * // Matched previous app intent.setFlags(intent.getFlags() &
+         * Intent.FLAG_ACTIVITY_MULTIPLE_TASK); startActivity(intent); return; }
+         * Log.d(TAG, "Added Intent to list " + intent); apps.add(intent); }
+         */
+
     }
 
     public void unregisterActivity(SoupActivity activity) {

@@ -96,8 +96,7 @@ public abstract class SoupActivity extends DroidGap {
                     appView.setVisibility(View.VISIBLE);
 
                     progressDialog = ProgressDialog.show(SoupActivity.this, null,
-                            "Verifying user …",
-                            true, false);
+                            "Verifying user …", true, false);
 
                     gotHidden = true;
                 }
@@ -452,6 +451,9 @@ public abstract class SoupActivity extends DroidGap {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Sanitize
+        setIntent(getIntent());
+
         ((SoupApplication)getApplication()).registerActivity(this);
 
         // Resolve the intent (provided by child classes)
@@ -481,7 +483,22 @@ public abstract class SoupActivity extends DroidGap {
 
         setIntent(intent);
 
+        ((SoupApplication)getApplication()).registerActivity(this);
+
         this.onResolveIntent();
+    }
+
+    // FIXME: Conversion can be removed later
+    /**
+     * Clean up old intent format
+     */
+    public void setIntent(Intent newIntent) {
+        if (newIntent.hasExtra("uri")) {
+            newIntent.setData(Uri.parse(newIntent.getStringExtra("uri")));
+            newIntent.removeExtra("uri");
+        }
+
+        super.setIntent(newIntent);
     }
 
     /**

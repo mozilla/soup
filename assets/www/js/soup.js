@@ -61,6 +61,7 @@ soup.App = (function() {
 		}
 		
 		var title = document.createElement('div');
+		title.className = 'title';
 		title.textContent = this.manifest.name;
 		
 		el.appendChild(img);
