@@ -3,6 +3,7 @@ package org.mozilla.labs.Soup.app;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Observable;
 
 import org.mozilla.labs.Soup.R;
@@ -190,9 +191,19 @@ public class SoupApplication extends Application {
         Log.d(TAG, "Deleting apps.db: " + deleteDatabase("apps.db"));
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        Map<String, ?> previous = prefs.getAll();
+
         prefs.edit().clear().commit();
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, true);
+
+        String[] devPrefs = {
+                "dev_store", "dev_identity", "dev_sync"
+        };
+        for (String pref : devPrefs) {
+            prefs.edit().putString(pref, (String)previous.get(pref));
+        }
 
         deleteCache();
 
