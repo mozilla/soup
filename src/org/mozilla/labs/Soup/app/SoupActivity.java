@@ -547,16 +547,20 @@ public abstract class SoupActivity extends DroidGap {
         switch (id) {
             case DIALOG_LOADING_ID:
                 ProgressDialog loadingDialog = new ProgressDialog(this);
+
                 loadingDialog.setMessage("Loading ...");
                 loadingDialog.setIndeterminate(true);
                 loadingDialog.setCancelable(true);
+
                 return loadingDialog;
 
             case DIALOG_LOGGING_ID:
                 ProgressDialog loggingDialog = new ProgressDialog(this);
+
                 loggingDialog.setMessage("Logging in ...");
                 loggingDialog.setIndeterminate(true);
                 loggingDialog.setCancelable(true);
+
                 return loggingDialog;
         }
 
