@@ -7,6 +7,7 @@ import java.io.InputStream;
 import org.mozilla.labs.Soup.R;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -54,6 +55,10 @@ public abstract class SoupActivity extends DroidGap {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
             Gravity.CENTER_VERTICAL);
 
+    public static final int DIALOG_LOADING_ID = 0;
+
+    public static final int DIALOG_LOGGING_ID = 1;
+
     private SoupChromeClient appClient;
 
     private View childRoot = null;
@@ -61,8 +66,6 @@ public abstract class SoupActivity extends DroidGap {
     private WebView childView = null;
 
     private View titleView = null;
-
-    public ProgressDialog progressDialog = null;
 
     private class SoupChildViewClient extends WebViewClient {
 
@@ -95,8 +98,7 @@ public abstract class SoupActivity extends DroidGap {
 
                     appView.setVisibility(View.VISIBLE);
 
-                    progressDialog = ProgressDialog.show(SoupActivity.this, null,
-                            "Verifying user …", true, false);
+                    showDialog(DIALOG_LOGGING_ID);
 
                     gotHidden = true;
                 }
@@ -539,6 +541,28 @@ public abstract class SoupActivity extends DroidGap {
         return true;
     }
 
+    @Override
+    protected Dialog onCreateDialog(int id) {
+
+        switch (id) {
+            case DIALOG_LOADING_ID:
+                ProgressDialog loadingDialog = new ProgressDialog(this);
+                loadingDialog.setMessage("Loading ...");
+                loadingDialog.setIndeterminate(true);
+                loadingDialog.setCancelable(true);
+                return loadingDialog;
+
+            case DIALOG_LOGGING_ID:
+                ProgressDialog loggingDialog = new ProgressDialog(this);
+                loggingDialog.setMessage("Logging in ...");
+                loggingDialog.setIndeterminate(true);
+                loggingDialog.setCancelable(true);
+                return loggingDialog;
+        }
+
+        return super.onCreateDialog(id);
+    }
+
     public void clearCache() {
         super.clearCache();
 
@@ -710,10 +734,7 @@ public abstract class SoupActivity extends DroidGap {
 
         root.removeView(childRoot);
 
-        if (progressDialog != null) {
-            progressDialog.dismiss();
-            progressDialog = null;
-        }
+        dismissDialog(DIALOG_LOGGING_ID);
 
         titleView.setVisibility(View.VISIBLE);
 

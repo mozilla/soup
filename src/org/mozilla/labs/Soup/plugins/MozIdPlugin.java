@@ -6,11 +6,12 @@ import java.net.URI;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.labs.Soup.app.SoupActivity;
 import org.mozilla.labs.Soup.app.SoupApplication;
 import org.mozilla.labs.Soup.http.HttpFactory;
 
-import android.app.ProgressDialog;
 import android.content.SharedPreferences;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -100,36 +101,45 @@ public class MozIdPlugin extends Plugin {
 
                 public void run() {
 
-                    ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email", true,
-                            true);
+                    ctx.showDialog(SoupActivity.DIALOG_LOGGING_ID);
 
-                    String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
+                    new Thread(new Runnable() {
+                        public void run() {
 
-                    Log.d(TAG, "preVerify verified " + verifiedEmail + " from " + assertion);
+                            Looper.prepare();
 
-                    if (!TextUtils.isEmpty(verifiedEmail)) {
-                        try {
-                            event.put("email", verifiedEmail).put("assertion", assertion);
+                            String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
 
-                            if (email != verifiedEmail) {
-                                prefs.edit().putString("email", verifiedEmail).commit();
-                                event.put("email", email);
+                            Log.d(TAG, "preVerify verified " + verifiedEmail + " from " + assertion);
+
+                            if (!TextUtils.isEmpty(verifiedEmail)) {
+                                try {
+                                    event.put("email", verifiedEmail).put("assertion", assertion);
+
+                                    if (email != verifiedEmail) {
+                                        prefs.edit().putString("email", verifiedEmail).commit();
+                                        event.put("email", email);
+                                    }
+                                } catch (JSONException e) {
+                                }
+
+                                ((SoupApplication)ctx.getApplication()).triggerSync();
+
+                            } else {
+                                assertions.remove(audience);
+                                prefs.edit().putString("assertions", assertions.toString())
+                                        .commit();
                             }
-                        } catch (JSONException e) {
+
+                            Log.d(TAG, "preVerify returns " + event);
+
+                            ctx.dismissDialog(SoupActivity.DIALOG_LOGGING_ID);
+
+                            success(new PluginResult(Status.OK, event), callbackId);
+
+                            Looper.loop();
                         }
-
-                        ((SoupApplication)ctx.getApplication()).triggerSync();
-
-                    } else {
-                        assertions.remove(audience);
-                        prefs.edit().putString("assertions", assertions.toString()).commit();
-                    }
-
-                    Log.d(TAG, "preVerify returns " + event);
-
-                    dlg.dismiss();
-
-                    success(new PluginResult(Status.OK, event), callbackId);
+                    }).start();
                 }
             });
 
@@ -170,49 +180,57 @@ public class MozIdPlugin extends Plugin {
 
             public void run() {
 
-                ProgressDialog dlg = ProgressDialog.show(ctx, null, "Verifying email", true, true);
+                ctx.showDialog(SoupActivity.DIALOG_LOGGING_ID);
 
-                final String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
+                new Thread(new Runnable() {
+                    public void run() {
 
-                Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience + " using "
-                        + assertion);
+                        Looper.prepare();
 
-                if (verifiedEmail != null) {
+                        final String verifiedEmail = HttpFactory.verifyId(ctx, assertion, audience);
 
-                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+                        ctx.dismissDialog(SoupActivity.DIALOG_LOGGING_ID);
 
-                    // Save assertions to preferences
-                    JSONObject assertions = null;
-                    try {
-                        assertions = new JSONObject(prefs.getString("assertions",
-                                new JSONObject().toString()));
-                        assertions.put(audience, assertion);
-                    } catch (JSONException e) {
+                        Log.d(TAG, "postVerify returned " + verifiedEmail + " for " + audience
+                                + " using " + assertion);
+
+                        if (verifiedEmail != null) {
+
+                            SharedPreferences prefs = PreferenceManager
+                                    .getDefaultSharedPreferences(ctx);
+
+                            // Save assertions to preferences
+                            JSONObject assertions = null;
+                            try {
+                                assertions = new JSONObject(prefs.getString("assertions",
+                                        new JSONObject().toString()));
+                                assertions.put(audience, assertion);
+                            } catch (JSONException e) {
+                            }
+                            prefs.edit().putString("assertions", assertions.toString()).commit();
+
+                            // Save email if new
+                            if (!verifiedEmail.equals(prefs.getString("email", null))) {
+                                prefs.edit().putString("email", verifiedEmail).commit();
+
+                                Toast.makeText(ctx, "Remembered login for " + verifiedEmail,
+                                        Toast.LENGTH_SHORT).show();
+                            }
+
+                            ((SoupApplication)ctx.getApplication()).triggerSync();
+
+                            success(new PluginResult(Status.OK, assertion), callbackId);
+                        } else {
+
+                            Toast.makeText(ctx, "Verification failed, try to refresh!",
+                                    Toast.LENGTH_SHORT);
+
+                            success(new PluginResult(Status.OK, false), callbackId);
+                        }
+
+                        Looper.loop();
                     }
-                    prefs.edit().putString("assertions", assertions.toString()).commit();
-
-                    dlg.dismiss();
-
-                    // Save email if new
-                    if (!verifiedEmail.equals(prefs.getString("email", null))) {
-                        prefs.edit().putString("email", verifiedEmail).commit();
-
-                        Toast.makeText(ctx, "Remembered login for " + verifiedEmail,
-                                Toast.LENGTH_SHORT).show();
-                    }
-
-                    dlg.dismiss();
-
-                    ((SoupApplication)ctx.getApplication()).triggerSync();
-
-                    success(new PluginResult(Status.OK, assertion), callbackId);
-                } else {
-                    dlg.dismiss();
-
-                    Toast.makeText(ctx, "Verification failed, try to refresh!", Toast.LENGTH_SHORT);
-
-                    success(new PluginResult(Status.OK, false), callbackId);
-                }
+                }).start();
 
             }
         });

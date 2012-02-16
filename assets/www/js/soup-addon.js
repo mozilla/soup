@@ -383,6 +383,43 @@
 
 	// END bridge
 	
+	/**
+	 * store-fix
+	 * 
+	 * Smoothing app store experience by adding auto-login.
+	 * 
+	 * FIXME: Remove for release
+	 *
+	
+	function fixStore() {
+		
+		console.log('fixStore on ' + location + ', ' + document.readyState);
+		
+		if (!location.hostname || document.readyState != 'complete') {
+			return;
+		}
+		
+		clearInterval(fixStore.timeout);
+		fixStore = null;
+		
+		console.log('fixStore on ' + location.host + ', ' + /(mozilla|allizom)\.org$/.test(location.host))
+		
+		if (!/(mozilla|allizom)\.org$/.test(location.hostname)) { // mozilla store only
+			return;
+		}
+		
+		var link = document.querySelector('a.browserid-login, button.browserid-login');
+		
+		if (link) {
+			console.log('Found link ' + a.className);
+			link.click();
+		}
+	};
+	
+	fixStore.timeout = setInterval(fixStore, 50);
+	
+	// END store-fix
+	*/
 	
 	console.log('soup-addon.js bridged on ' + (location.host || location));
 	
