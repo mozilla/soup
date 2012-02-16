@@ -22,8 +22,10 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 
 /**
@@ -35,11 +37,24 @@ public class ImageFactory {
 
 	public static Bitmap getResizedImage(String uri, int newHeight, int newWidth) {
 		Bitmap bitmap = null;
-		try {
-			bitmap = BitmapFactory.decodeStream((InputStream) new URL(uri).getContent());
-		} catch (Exception e) {
-			Log.w(TAG, "BitmapFactory.decodeStream", e);
-		}
+
+        String scheme = Uri.parse(uri).getScheme();
+
+        if (scheme != null && scheme.equals("data")) {
+
+            byte[] decodedString = Base64.decode(uri.substring(22), Base64.DEFAULT);
+            bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+        } else {
+
+            try {
+                bitmap = BitmapFactory.decodeStream((InputStream)new URL(uri).getContent());
+            } catch (Exception e) {
+                Log.w(TAG, "BitmapFactory.decodeStream", e);
+            }
+
+        }
+
 		
 		if (bitmap == null) {
 			Log.w(TAG, "Invalid bitmap for " + uri);

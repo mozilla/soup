@@ -310,11 +310,12 @@ public final class AppsContract {
 
             String data = icons.optString(max);
 
-            if (Uri.parse(data).getScheme() == null) { // base64 string
+            String iconUrl = icons.optString(max);
+            String scheme = Uri.parse(data).getScheme();
 
+            if (scheme == null || !scheme.equals("data")) { // base64 string
+                iconUrl = origin + iconUrl;
             }
-
-            String iconUrl = origin + icons.optString(max);
 
             Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
 

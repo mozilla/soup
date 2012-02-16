@@ -15,6 +15,7 @@
         <item>apps-preview-dev.allizom.org</item>
         <item>apps-preview.allizom.org</item>
         <item>apps.mozillalabs.com</item>
+        <item>store.html</item>
     </string-array>
     <string-array name="store_values">
         <item>https://apps-preview.mozilla.org</item>
@@ -22,6 +23,7 @@
         <item>https://apps-preview-dev.allizom.org</item>
         <item>https://apps-preview.allizom.org</item>
         <item>https://apps.mozillalabs.com/appdir/</item>
+        <item>file:///android_asset/www/store.html</item>
     </string-array>
 
     <string name="store_default">https://apps-preview.mozilla.org</string>

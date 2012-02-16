@@ -422,6 +422,41 @@ public class HttpFactory {
 
     public static JSONObject getManifest(Context ctx, String manifestUri) {
 
+        JSONObject manifests = new JSONObject();
+
+        try {
+            InputStream is = ctx.getAssets().open("www/testdb.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+
+            JSONArray manifestList = new JSONArray(new String(buffer));
+
+            for (int i = 0; i < manifestList.length(); i++) {
+                JSONObject manifest = manifestList.getJSONObject(i);
+
+                Uri origin = Uri.parse(manifest.getString("origin"));
+
+                manifests.put(origin.getScheme() + "://" + origin.getAuthority(),
+                        manifest.getJSONObject("manifest"));
+            }
+
+        } catch (IOException e) {
+            Log.d(TAG, "getManifest Faker failed", e);
+        } catch (JSONException e) {
+            Log.d(TAG, "getManifest Faker failed", e);
+        }
+
+        Uri match = Uri.parse(manifestUri);
+        JSONObject fakifest = manifests.optJSONObject(match.getScheme() + "://"
+                + match.getAuthority());
+
+        if (fakifest != null) {
+            Log.d(TAG, "Returned fakifest for " + manifestUri);
+            return fakifest;
+        }
+
         try {
             return executeGet(ctx, manifestUri, null);
         } catch (Exception e) {
