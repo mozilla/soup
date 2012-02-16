@@ -738,7 +738,11 @@ public abstract class SoupActivity extends DroidGap {
 
         root.removeView(childRoot);
 
-        dismissDialog(DIALOG_LOGGING_ID);
+
+        try {
+            dismissDialog(DIALOG_LOGGING_ID);
+        } catch (Exception e) {
+        }
 
         titleView.setVisibility(View.VISIBLE);
 
