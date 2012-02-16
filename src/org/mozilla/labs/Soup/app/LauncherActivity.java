@@ -25,9 +25,6 @@ public class LauncherActivity extends SoupActivity {
 		// Init web views
 
 		if (onCreateLayout()) {
-
-			// only set URL for fresh views
-
 			super.loadUrl("file:///android_asset/www/index.html");
 		}
 
