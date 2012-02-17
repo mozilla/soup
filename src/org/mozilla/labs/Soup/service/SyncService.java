@@ -66,7 +66,7 @@ public class SyncService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent " + intent);
 
-        showNotification();
+        // showNotification();
 
         final ResultReceiver receiver = intent.getParcelableExtra(EXTRA_STATUS_RECEIVER);
         if (receiver != null)
@@ -259,12 +259,12 @@ public class SyncService extends IntentService {
              * Visual feedback
              */
 
-            hideNotification();
+            // hideNotification();
 
         } catch (Exception e) {
             Log.w(TAG, "Sync did not happen", e);
 
-            hideNotification();
+            // hideNotification();
 
             if (receiver != null) {
                 // Pass back error to surface listener
