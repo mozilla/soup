@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -39,6 +40,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -66,6 +68,10 @@ public abstract class SoupActivity extends DroidGap {
     private WebView childView = null;
 
     private View titleView = null;
+
+    private PopupWindow titlePop;
+
+    private DisplayMetrics dm;
 
     private class SoupChildViewClient extends WebViewClient {
 
@@ -259,10 +265,23 @@ public abstract class SoupActivity extends DroidGap {
                 SoupActivity.this.setTitle("Loading " + uri.getHost());
             }
 
-            titleView.setVisibility(View.VISIBLE);
+            // titleView.setVisibility(View.VISIBLE);
+            titleView.setVisibility(View.GONE);
 
             ProgressBar progress = (ProgressBar)root.findViewById(R.id.title_progress_bar);
             progress.setVisibility(View.VISIBLE);
+
+            appView.post(new Runnable() {
+                public void run() {
+                    Log.d(TAG, "Showing");
+                    try {
+                        titlePop.showAtLocation(appView, Gravity.LEFT | Gravity.BOTTOM,
+                                (int)(5 * dm.density), (int)(5 * dm.density));
+                    } catch (Exception e) {
+                        Log.e(TAG, "Could not show pop", e);
+                    }
+                }
+            });
 
             super.onPageStarted(view, url, favicon);
         }
@@ -282,6 +301,10 @@ public abstract class SoupActivity extends DroidGap {
             }
 
             titleView.setVisibility(View.GONE);
+
+            if (titlePop.isShowing()) {
+                titlePop.dismiss();
+            }
 
             super.onPageFinished(view, url);
         }
@@ -593,6 +616,13 @@ public abstract class SoupActivity extends DroidGap {
 
         titleView = inflater.inflate(R.layout.title, null);
 
+        dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+        titlePop = new PopupWindow(inflater.inflate(R.layout.popover, null),
+                (int)(20 * dm.density), (int)(20 * dm.density), false);
+        titlePop.setAnimationStyle(android.R.anim.slide_in_left);
+
         root.removeView(appView);
         root.addView(titleView);
         root.addView(appView);
@@ -738,13 +768,12 @@ public abstract class SoupActivity extends DroidGap {
 
         root.removeView(childRoot);
 
-
         try {
             dismissDialog(DIALOG_LOGGING_ID);
         } catch (Exception e) {
         }
 
-        titleView.setVisibility(View.VISIBLE);
+        // titleView.setVisibility(View.VISIBLE);
 
         appView.setVisibility(View.VISIBLE);
 
