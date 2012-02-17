@@ -23,7 +23,7 @@
                 "url": "http://studio1290.com/",
                 "name": "Atlantic Records"
             },
-            "launch_path": "?theme=Studio%201290%20on%20Foundation",
+            "launch_path": "/?theme=Studio%201290%20on%20Foundation",
             "name": "Studio1290",
             "description": "More Music - doo doo dee dee wahhh baba duwap wap dahh.. "
         }
@@ -108,7 +108,7 @@
                 "url": "http://cdn.onescreen.net/wsj/boxee/v1.5.3/",
                 "name": "Wall Street Journal"
             },
-            "launch_path": "wsj/boxee/v1.5.3/",
+            "launch_path": "/wsj/boxee/v1.5.3/",
             "name": "Wall Street Journal",
             "description": "News, video, boxee"
         }
