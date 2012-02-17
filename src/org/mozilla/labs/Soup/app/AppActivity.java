@@ -3,7 +3,6 @@ package org.mozilla.labs.Soup.app;
 import android.content.Intent;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
 public class AppActivity extends SoupActivity {
@@ -39,8 +38,10 @@ public class AppActivity extends SoupActivity {
 					return;
 				}
 
+                appView.clearView();
+
 				// Hide old app
-				appView.setVisibility(View.INVISIBLE);
+                // appView.setVisibility(View.VISIBLE);
 			}
 
 

@@ -18,7 +18,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.phonegap.api.Plugin;
 import com.phonegap.api.PluginResult;
@@ -131,7 +130,8 @@ public class MozAppsMgmtPlugin extends Plugin implements Observer {
 
         ctx.runOnUiThread(new Runnable() {
             public void run() {
-                Toast.makeText(ctx, "Launching " + name, Toast.LENGTH_SHORT).show();
+                // Toast.makeText(ctx, "Launching " + name,
+                // Toast.LENGTH_SHORT).show();
 
                 ctx.startActivity(shortcutIntent);
             }
@@ -186,7 +186,7 @@ public class MozAppsMgmtPlugin extends Plugin implements Observer {
         cur.close();
 
         if (update) {
-            
+
             // dirty object clone
             JSONObject uninstalled = new JSONObject();
             try {

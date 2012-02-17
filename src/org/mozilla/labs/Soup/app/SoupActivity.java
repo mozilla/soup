@@ -273,7 +273,6 @@ public abstract class SoupActivity extends DroidGap {
 
             appView.post(new Runnable() {
                 public void run() {
-                    Log.d(TAG, "Showing");
                     try {
                         titlePop.showAtLocation(appView, Gravity.LEFT | Gravity.BOTTOM,
                                 (int)(5 * dm.density), (int)(5 * dm.density));
@@ -303,7 +302,15 @@ public abstract class SoupActivity extends DroidGap {
             titleView.setVisibility(View.GONE);
 
             if (titlePop.isShowing()) {
-                titlePop.dismiss();
+                appView.post(new Runnable() {
+                    public void run() {
+                        try {
+                            titlePop.dismiss();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Could not hide pop", e);
+                        }
+                    }
+                });
             }
 
             super.onPageFinished(view, url);
