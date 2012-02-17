@@ -245,7 +245,7 @@ public final class AppsContract {
 
                 final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
-                if (prefs.getBoolean("install_shortcut", true)) {
+                if (prefs.getBoolean("install_shortcut_sync", false)) {
                     Log.d(TAG, "Install creates shortcut");
 
                     Intent intent = new Intent();
@@ -319,7 +319,7 @@ public final class AppsContract {
 
             Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
 
-            return ImageFactory.getResizedImage(iconUrl, 72, 72);
+            return ImageFactory.getResizedImage(iconUrl, 96, 96);
         }
 
     }

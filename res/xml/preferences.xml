@@ -8,44 +8,40 @@
         android:enabled="false"
         android:key="identity_list"
         android:title="Identities" >
-
         <EditTextPreference
             android:key="email"
             android:summary="Add more emails"
             android:title="Add identity" />
     </PreferenceCategory>
-
     <PreferenceCategory android:title="After installation" >
-
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="install_shortcut"
             android:summary="Create app shortcut on homescreen"
             android:title="Create shortcut" />
-
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="install_shortcut_sync"
+            android:summary="Create app shortcut on homescreen"
+            android:title="Create shortcut after sync" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="install_launch"
             android:summary="Automatically run installed apps"
             android:title="Launch after installation" />
     </PreferenceCategory>
-
     <PreferenceCategory android:title="Notifications" >
-
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="install_prompt"
             android:summary="Prompt before installing apps from other devices"
             android:title="Confirm synced apps" />
     </PreferenceCategory>
-
     <PreferenceCategory android:title="About" >
-
         <PreferenceScreen
             android:key="dev_screen"
             android:summary="Set options for debugging"
             android:title="Development" >
-
             <ListPreference
                 android:defaultValue="@string/store_default"
                 android:entries="@array/store_array"
@@ -53,7 +49,6 @@
                 android:key="dev_store"
                 android:summary="Select your preferred store"
                 android:title="Market Provider" />
-
             <ListPreference
                 android:defaultValue="@string/identity_default"
                 android:entries="@array/identity_array"
@@ -61,7 +56,6 @@
                 android:key="dev_identity"
                 android:summary="Select your preferred identity provider"
                 android:title="Identity Provider" />
-
             <ListPreference
                 android:defaultValue="@string/sync_default"
                 android:entries="@array/sync_array"
