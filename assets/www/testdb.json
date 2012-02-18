@@ -107,7 +107,7 @@
             "installs_allowed_from": ["*"],
             "developer": {
                 "url": "https://air.mixmatchmusic.com/",
-                "name": "Wall Street Journal"
+                "name": "Jump Smokers"
             },
             "launch_path": "/app/525/",
             "name": "Jump Smokers",
