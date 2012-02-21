@@ -49,6 +49,8 @@ public class AppActivity extends SoupActivity {
 
 			currentUri = uri;
 			super.loadUrl(uri);
+
+            clearHistory();
 		}
 
 	}
