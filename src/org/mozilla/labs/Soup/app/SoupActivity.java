@@ -568,6 +568,9 @@ public abstract class SoupActivity extends DroidGap {
         // Allow window.open, bridged by onCreateWindow
         settings.setSupportMultipleWindows(true);
 
+        // http://stackoverflow.com/questions/2943947/how-to-enable-flash-plugin-in-webview
+        settings.setPluginsEnabled(true);
+
         return true;
     }
 
