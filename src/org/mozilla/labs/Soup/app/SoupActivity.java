@@ -540,6 +540,9 @@ public abstract class SoupActivity extends DroidGap {
         }
 
         super.setIntent(newIntent);
+
+        super.setIntegerProperty("loadUrlTimeoutValue", 120000);
+        super.setBooleanProperty("keepRunning", false);
     }
 
     /**
@@ -552,9 +555,6 @@ public abstract class SoupActivity extends DroidGap {
             Log.d(TAG, "onCreateLayout skipped");
             return false;
         }
-
-        super.setBooleanProperty("keepRunning", true);
-        super.setIntegerProperty("loadUrlTimeoutValue", 60000);
 
         init();
 
