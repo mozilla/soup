@@ -277,7 +277,7 @@ public abstract class SoupActivity extends DroidGap {
                         titlePop.showAtLocation(appView, Gravity.LEFT | Gravity.BOTTOM,
                                 (int)(5 * dm.density), (int)(5 * dm.density));
                     } catch (Exception e) {
-                        Log.e(TAG, "Could not show pop", e);
+                        Log.w(TAG, "Could not show pop", e);
                     }
                 }
             });
@@ -307,7 +307,7 @@ public abstract class SoupActivity extends DroidGap {
                         try {
                             titlePop.dismiss();
                         } catch (Exception e) {
-                            Log.e(TAG, "Could not hide pop", e);
+                            Log.w(TAG, "Could not hide pop", e);
                         }
                     }
                 });
