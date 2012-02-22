@@ -14,6 +14,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
@@ -31,6 +32,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.webkit.GeolocationPermissions;
 import android.webkit.JsPromptResult;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
@@ -73,6 +75,8 @@ public abstract class SoupActivity extends DroidGap {
 
     private DisplayMetrics dm;
 
+    public View customView;
+
     private class SoupChildViewClient extends WebViewClient {
 
         private boolean gotHidden = false;
@@ -85,7 +89,7 @@ public abstract class SoupActivity extends DroidGap {
 
             Uri uri = Uri.parse(url);
 
-            if (!gotHidden && uri != null) {
+            if (!gotHidden && uri != null && uri.getAuthority() != null) {
 
                 final SharedPreferences prefs = PreferenceManager
                         .getDefaultSharedPreferences(SoupActivity.this);
@@ -312,11 +316,85 @@ public abstract class SoupActivity extends DroidGap {
      */
     private class SoupChromeClient extends GapClient implements OnClickListener {
 
+        private CustomViewCallback customViewCallback;
+
+        private Bitmap defaultVideoPoster = null;
+
+        private View videoProgressView;
+
         /**
          * @param context
          */
         public SoupChromeClient(Context context) {
             super(context);
+        }
+
+        @Override
+        public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+
+            Log.d(TAG, "onShowCustomView");
+
+            // Log.i(LOGTAG, "here in on ShowCustomView");
+            appView.setVisibility(View.GONE);
+
+            // if a view already exists then immediately terminate the new one
+            if (customView != null) {
+                callback.onCustomViewHidden();
+                return;
+            }
+
+            root.addView(view);
+            customView = view;
+
+            // view.setLayoutParams(COVER_SCREEN_PARAMS);
+
+            customViewCallback = callback;
+            appView.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void onHideCustomView() {
+
+            if (customView == null) {
+                return;
+            }
+
+            // Hide the custom view.
+            customView.setVisibility(View.GONE);
+
+            // Remove the custom view from its container.
+            root.removeView(customView);
+            customView = null;
+
+            appView.setVisibility(View.VISIBLE);
+            customViewCallback.onCustomViewHidden();
+
+        }
+
+        @Override
+        public Bitmap getDefaultVideoPoster() {
+
+            Log.d(TAG, "getDefaultVideoPoster");
+
+            // Log.i(LOGTAG, "here in on getDefaultVideoPoster");
+            if (defaultVideoPoster == null) {
+                defaultVideoPoster = BitmapFactory.decodeResource(getResources(),
+                        R.drawable.default_video_poster);
+            }
+
+            return defaultVideoPoster;
+        }
+
+        @Override
+        public View getVideoLoadingProgressView() { //
+            Log.i(TAG, "getVideoLoadingPregressView");
+
+            if (videoProgressView == null) {
+                LayoutInflater inflater = LayoutInflater.from(SoupActivity.this);
+                videoProgressView = inflater.inflate(R.layout.video_progress, null);
+            }
+
+            return videoProgressView;
         }
 
         /*
@@ -426,6 +504,13 @@ public abstract class SoupActivity extends DroidGap {
             ImageView image = (ImageView)root.findViewById(R.id.title_image);
             image.setImageBitmap(icon);
         }
+
+        @Override
+        public void onGeolocationPermissionsShowPrompt(String origin,
+                GeolocationPermissions.Callback callback) {
+            callback.invoke(origin, true, false);
+        }
+
     }
 
     /**
@@ -574,14 +659,6 @@ public abstract class SoupActivity extends DroidGap {
         appView.setWebChromeClient(appClient);
         setWebViewClient(this.appView, new SoupViewClient(this));
 
-        final WebSettings settings = appView.getSettings();
-
-        // Allow window.open, bridged by onCreateWindow
-        settings.setSupportMultipleWindows(true);
-
-        // http://stackoverflow.com/questions/2943947/how-to-enable-flash-plugin-in-webview
-        settings.setPluginsEnabled(true);
-
         return true;
     }
 
@@ -647,6 +724,26 @@ public abstract class SoupActivity extends DroidGap {
         root.removeView(appView);
         root.addView(titleView);
         root.addView(appView);
+
+        final WebSettings settings = appView.getSettings();
+
+        // Allow window.open, bridged by onCreateWindow
+        settings.setSupportMultipleWindows(true);
+
+        // Inspired by
+        // http://code.google.com/p/html5webview/source/browse/trunk/HTML5WebView/src/org/itri/html5webview/HTML5WebView.java
+        settings.setBuiltInZoomControls(true);
+        // settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
+        settings.setUseWideViewPort(true);
+        // settings.setLoadWithOverviewMode(true);
+        settings.setSavePassword(true);
+        settings.setSaveFormData(true);
+
+        settings.setGeolocationEnabled(true);
+        settings.setGeolocationDatabasePath("/data/data/org.itri.html5webview/databases/");
+
+        // http://stackoverflow.com/questions/2943947/how-to-enable-flash-plugin-in-webview
+        settings.setPluginsEnabled(true);
     }
 
     /*
@@ -684,6 +781,11 @@ public abstract class SoupActivity extends DroidGap {
 
         // If back key is pushed during popup time, we just close it
         if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (customView != null) {
+                appClient.onHideCustomView();
+                return true;
+            }
+
             if (childView != null) {
                 closeChildView();
                 return false;
