@@ -295,23 +295,13 @@ public abstract class SoupActivity extends DroidGap {
         public void onPageFinished(WebView view, String url) {
             Log.d(TAG + ".SoupViewClient", "onPageFinished: " + url);
 
+            hidePop();
+
             if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
                 injectJavaScript(appView, true);
             }
 
             titleView.setVisibility(View.GONE);
-
-            if (titlePop.isShowing()) {
-                appView.post(new Runnable() {
-                    public void run() {
-                        try {
-                            titlePop.dismiss();
-                        } catch (Exception e) {
-                            Log.w(TAG, "Could not hide pop", e);
-                        }
-                    }
-                });
-            }
 
             super.onPageFinished(view, url);
         }
@@ -487,6 +477,20 @@ public abstract class SoupActivity extends DroidGap {
         view.loadUrl(builder.toString());
     }
 
+    public void hidePop() {
+
+        if (!titlePop.isShowing()) {
+            return;
+        }
+
+        try {
+            titlePop.dismiss();
+        } catch (Exception e) {
+            Log.w(TAG, "Could not hide pop", e);
+        }
+
+    }
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -499,6 +503,13 @@ public abstract class SoupActivity extends DroidGap {
 
         // Resolve the intent (provided by child classes)
         this.onResolveIntent();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        hidePop();
     }
 
     @Override
@@ -542,7 +553,7 @@ public abstract class SoupActivity extends DroidGap {
         super.setIntent(newIntent);
 
         super.setIntegerProperty("loadUrlTimeoutValue", 120000);
-        super.setBooleanProperty("keepRunning", false);
+        super.setBooleanProperty("keepRunning", true);
     }
 
     /**

@@ -13,6 +13,7 @@ import org.mozilla.labs.Soup.http.ImageFactory;
 import org.mozilla.labs.Soup.provider.AppsContract.Apps;
 
 import android.app.AlertDialog;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -54,33 +55,17 @@ public class MozAppsPlugin extends Plugin {
 
                 cur = Apps.findAppByOrigin(ctx, origin, false);
 
+                int installed = 0;
+
                 if (cur != null) {
 
-                    if (cur.getInt(cur.getColumnIndex(Apps.STATUS)) != Apps.STATUS_ENUM.DELETED
-                            .ordinal()) {
-                        // TODO: Update install_data
-
-                        final JSONObject app = Apps.toJSONObject(cur);
-
-                        cur.close();
-
-                        Log.d(TAG, "App was installed: " + app);
-
-                        ctx.runOnUiThread(new Runnable() {
-                            public void run() {
-                                Toast.makeText(
-                                        ctx,
-                                        app.optJSONObject("manifest").optString("name")
-                                                + " updated", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
-                        return new PluginResult(Status.OK);
-                    }
+                    installed = cur.getInt(cur.getColumnIndex(Apps._ID));
+                    cur.close();
 
                 }
 
-                return install(callback, originUri.toString(), data.optJSONObject(1), origin, cur);
+                return install(callback, originUri.toString(), data.optJSONObject(1), origin,
+                        installed);
 
             } else if (action.equals("getSelf")) {
 
@@ -147,7 +132,8 @@ public class MozAppsPlugin extends Plugin {
     }
 
     public synchronized PluginResult install(final String callbackId, final String manifestUri,
-            final JSONObject install_data, final String origin, final Cursor cur) throws Exception {
+            final JSONObject install_data, final String origin, final int installed)
+            throws Exception {
 
         ctx.runOnUiThread(new Runnable() {
 
@@ -220,7 +206,7 @@ public class MozAppsPlugin extends Plugin {
                             }
                         }
 
-                        final String launchUri = origin + manifest.optString("launch_path", "");
+                        final String launchUri = origin + manifest.optString("launch_path", "/");
 
                         SharedPreferences prefs = PreferenceManager
                                 .getDefaultSharedPreferences(ctx);
@@ -234,8 +220,14 @@ public class MozAppsPlugin extends Plugin {
 
                         AlertDialog.Builder installDlg = new AlertDialog.Builder(ctx);
 
+                        String title = "Install " + name + "?";
+
+                        if (installed != 0) {
+                            title = "Update " + name + "?";
+                        }
+
                         installDlg
-                                .setTitle("Install " + name + "?")
+                                .setTitle(title)
                                 .setMultiChoiceItems(R.array.install_dialog_array, appSettings,
                                         new DialogInterface.OnMultiChoiceClickListener() {
                                             public void onClick(DialogInterface dialog,
@@ -266,12 +258,33 @@ public class MozAppsPlugin extends Plugin {
                                 new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int which) {
 
-                                        if (cur != null) {
+                                        Uri uri = null;
+
+                                        if (installed != 0) {
                                             values.put(Apps.STATUS, Apps.STATUS_ENUM.OK.ordinal());
                                         }
 
-                                        final Uri uri = ctx.getContentResolver().insert(
-                                                Apps.CONTENT_URI, values);
+                                        try {
+                                            if (installed != 0) {
+
+                                                uri = ContentUris.withAppendedId(Apps.CONTENT_URI,
+                                                        installed);
+                                                ctx.getContentResolver().update(uri, values, null,
+                                                        null);
+
+                                            } else {
+
+                                                uri = ctx.getContentResolver().insert(
+                                                        Apps.CONTENT_URI, values);
+
+                                            }
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "Installation failed for " + values, e);
+
+                                            Toast.makeText(ctx,
+                                                    "Installation flopped. Please try again!",
+                                                    Toast.LENGTH_SHORT);
+                                        }
 
                                         if (uri == null) {
                                             JSONObject errorEvent = null;
