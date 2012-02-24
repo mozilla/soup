@@ -266,23 +266,25 @@ public abstract class SoupActivity extends DroidGap {
                 injectJavaScript(appView, true);
 
                 appViewUrl = url;
-            }
 
-            Uri uri = Uri.parse(url);
-            if (uri != null && uri.getHost() != null) {
-                SoupActivity.this.setTitle("Loading " + uri.getHost());
+                Uri uri = Uri.parse(url);
+                if (uri != null && !TextUtils.isEmpty(uri.getHost())) {
+                    SoupActivity.this.setTitle("Loading " + uri.getHost());
 
-                appView.post(new Runnable() {
-                    public void run() {
-                        try {
-                            titlePop.showAtLocation(appView, Gravity.LEFT | Gravity.BOTTOM,
-                                    (int)(5 * dm.density), (int)(5 * dm.density));
-                        } catch (Exception e) {
-                            Log.w(TAG, "Could not show pop");
+                    Log.d(TAG, "Show pop for " + uri.getHost());
+
+                    appView.post(new Runnable() {
+                        public void run() {
+                            try {
+                                titlePop.showAtLocation(appView, Gravity.LEFT | Gravity.BOTTOM,
+                                        (int)(5 * dm.density), (int)(5 * dm.density));
+                            } catch (Exception e) {
+                                Log.w(TAG, "Could not show pop");
+                            }
                         }
-                    }
-                });
+                    });
 
+                }
             }
 
             // titleView.setVisibility(View.VISIBLE);

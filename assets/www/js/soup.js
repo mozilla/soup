@@ -104,7 +104,7 @@ soup.App = (function() {
 			container.innerHTML = '';
 			
 			if (!list || !list.length) {
-				container.textContent = 'No installed apps, watching for sync updates …';
+				container.innerHTML = '<em>No installed apps, waiting for sync updates …</em>';
 				return;
 			}
 		}
@@ -129,6 +129,30 @@ soup.App = (function() {
 
 document.addEventListener('deviceready', function() {
 	
+	function getApps() {
+		
+		var pending = navigator.mozApps.mgmt.getAll();
+		
+		pending.onsuccess = function() {
+			console.log('navigator.mozApps.mgmt.getAll ' + pending.result.length);
+			soup.App.renderList(pending.result);
+		};
+		pending.onerror = function() {
+			log.textContent = error;
+		};
+
+		if (!navigator.mozApps.mgmt.oninstall) {
+			navigator.mozApps.mgmt.oninstall = function(evt) {
+				console.log('navigator.mozApps.mgmt.oninstall');
+				soup.App.renderList(evt.application, true);
+			};
+			navigator.mozApps.mgmt.onuninstall = function(evt) {
+				console.log('navigator.mozApps.mgmt.onuninstall');
+				soup.App.removeFromList(evt.application);
+			};
+		}
+	}
+	
 	function verify() {
 		
 		var container = document.getElementById('myapps');
@@ -141,25 +165,11 @@ document.addEventListener('deviceready', function() {
 			console.log('navigator.id.getVerifiedEmail DONE');
 		
 			if (assertion) {
-				var pending = navigator.mozApps.mgmt.getAll();
-				pending.onsuccess = function() {
-					console.log('navigator.mozApps.mgmt.getAll ' + pending.result.length);
-					soup.App.renderList(pending.result);
-				};
-				pending.onerror = function() {
-					log.textContent = error;
-				};
-
-				navigator.mozApps.mgmt.oninstall = function(evt) {
-					console.log('navigator.mozApps.mgmt.oninstall');
-					soup.App.renderList(evt.application, true);
-				};
-				navigator.mozApps.mgmt.onuninstall = function(evt) {
-					console.log('navigator.mozApps.mgmt.onuninstall');
-					soup.App.removeFromList(evt.application);
-				};
+				
+				login.style.display = 'none';
+				
 			} else {
-				log.textContent = 'Try sign in again!';
+				if (log) log.textContent = 'Try to sign in again!';
 			}
 			
 		});
@@ -175,7 +185,7 @@ document.addEventListener('deviceready', function() {
 		}, false);
 	}
 	
-	verify();
+	getApps();
 	
 }, false);
 

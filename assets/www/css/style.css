@@ -104,12 +104,24 @@ article {
 }
 
 #btn-login {
-	padding: 0.6em 0;
+	line-height: 1.2em;
+	padding: 0.1em 1em 0;
 }
 
 #btn-login img {
 	height: 1.6em;
 	vertical-align: middle;
+}
+
+em {
+	display: block;
+	border-radius: 0.5em;
+	background-color: #fff;
+	font-style: normal;
+	margin: 1.2em;
+	padding: 0.6em;
+	color: #777;
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 .app {
