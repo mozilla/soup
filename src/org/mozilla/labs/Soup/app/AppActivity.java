@@ -1,3 +1,4 @@
+
 package org.mozilla.labs.Soup.app;
 
 import android.content.Intent;
@@ -8,38 +9,38 @@ import android.widget.Toast;
 
 public class AppActivity extends SoupActivity {
 
-	private static final String TAG = "AppActivity";
+    private static final String TAG = "AppActivity";
 
     private String currentUri = null;
 
     private Intent currentIntent = null;
 
-	protected void onResolveIntent() {
+    protected void onResolveIntent() {
 
-		final Intent intent = getIntent();
-		final String action = intent.getAction();
+        final Intent intent = getIntent();
+        final String action = intent.getAction();
 
-		Log.d(TAG, "onResolveIntent " + intent);
+        Log.d(TAG, "onResolveIntent " + intent);
 
-		if (ACTION_WEBAPP.equals(action)) {
+        if (ACTION_WEBAPP.equals(action)) {
 
             String uri = intent.getDataString();
 
             if (TextUtils.isEmpty(uri)) {
                 Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show();
 
-				Intent redirect = new Intent(this, LauncherActivity.class);
-				startActivity(redirect);
-				return;
-			}
+                Intent redirect = new Intent(this, LauncherActivity.class);
+                startActivity(redirect);
+                return;
+            }
 
-			boolean didInitialize = onCreateLayout();
+            boolean didInitialize = onCreateLayout();
 
-			if (!didInitialize) {
-				if (uri.equals(currentUri)) {
-					Log.d(TAG, "onResolveIntent skipped " + uri);
-					return;
-				}
+            if (!didInitialize) {
+                if (uri.equals(currentUri)) {
+                    Log.d(TAG, "onResolveIntent skipped " + uri);
+                    return;
+                }
 
                 SoupApplication app = (SoupApplication)getApplication();
 
@@ -52,7 +53,6 @@ public class AppActivity extends SoupActivity {
 
                     app.saveInstance(currentIntent, current);
                 }
-
 
                 Bundle state = app.restoreInstance(intent);
 
@@ -75,25 +75,26 @@ public class AppActivity extends SoupActivity {
 
                 appView.clearView();
 
-				// Hide old app
+                // Hide old app
                 // appView.setVisibility(View.VISIBLE);
-			}
+            }
 
-			Log.d(TAG, "onResolveIntent loading " + uri);
+            Log.d(TAG, "onResolveIntent loading " + uri);
 
             // Remember state intent and uri
             appViewUrl = currentUri = uri;
             currentIntent = getIntent();
 
-			super.loadUrl(uri);
+            super.loadUrl(uri);
 
             clearHistory();
-		}
+        }
 
-	}
+    }
 
     private void saveState(Bundle state) {
 
+        // Does NOTHING USEFUL!
         // appView.saveState(state);
 
         String url = appView.getUrl();
@@ -115,11 +116,12 @@ public class AppActivity extends SoupActivity {
     private void restoreState(Bundle state, String uri) {
 
         appView.clearView();
-        
+
+        // Does NOTHING USEFUL!
         // appView.restoreState(state);
 
         Log.d(TAG, "restoreState: " + uri + " vs " + state.getString("appView.url"));
-        
+
         if (!TextUtils.isEmpty(state.getString("appView.url"))) {
             uri = state.getString("appView.url");
         }
@@ -142,11 +144,10 @@ public class AppActivity extends SoupActivity {
     // saveState(state);
     // }
 
-
     public void onDestroy() {
-		super.onDestroy();
+        super.onDestroy();
 
         // Toast.makeText(this, "App closed", Toast.LENGTH_SHORT).show();
-	}
+    }
 
 }
