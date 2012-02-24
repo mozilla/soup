@@ -3,6 +3,7 @@ package org.mozilla.labs.Soup.app;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 
@@ -29,6 +30,8 @@ public class SoupApplication extends Application {
     public SyncManager syncManager;
 
     protected ArrayList<SoupActivity> activities = new ArrayList<SoupActivity>();
+
+    protected HashMap<String, Bundle> bundles = new HashMap<String, Bundle>();
 
     @Override
     public void onCreate() {
@@ -76,6 +79,14 @@ public class SoupApplication extends Application {
         Log.d(TAG, "TERMINATED");
 
         syncManager.terminate();
+    }
+
+    public void saveInstance(Intent intent, Bundle instance) {
+        bundles.put(intent.getDataString(), instance);
+    }
+
+    public Bundle restoreInstance(Intent intent) {
+        return bundles.get(intent.getDataString());
     }
 
     public void registerActivity(SoupActivity activity) {

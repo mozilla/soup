@@ -463,7 +463,7 @@ public abstract class SoupActivity extends DroidGap {
 
             final WebSettings settings = childView.getSettings();
             settings.setDomStorageEnabled(true);
-            settings.setBuiltInZoomControls(true);
+            settings.setBuiltInZoomControls(false);
             settings.setJavaScriptEnabled(true);
             settings.setAllowFileAccess(true);
 
@@ -732,12 +732,13 @@ public abstract class SoupActivity extends DroidGap {
 
         // Inspired by
         // http://code.google.com/p/html5webview/source/browse/trunk/HTML5WebView/src/org/itri/html5webview/HTML5WebView.java
-        settings.setBuiltInZoomControls(true);
+        settings.setBuiltInZoomControls(false);
         // settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
         settings.setUseWideViewPort(true);
         // settings.setLoadWithOverviewMode(true);
         settings.setSavePassword(true);
         settings.setSaveFormData(true);
+        settings.setAllowFileAccess(true);
 
         settings.setGeolocationEnabled(true);
         settings.setGeolocationDatabasePath("/data/data/org.itri.html5webview/databases/");
