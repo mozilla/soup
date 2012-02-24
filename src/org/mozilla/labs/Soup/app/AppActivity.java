@@ -46,10 +46,9 @@ public class AppActivity extends SoupActivity {
                 if (currentIntent != null) {
                     Bundle current = new Bundle();
 
-                    // super.onSaveInstanceState(current);
-                    appView.saveState(current);
+                    saveState(current);
 
-                    Log.d(TAG, "Saving state before restoring! " + currentIntent.getDataString());
+                    Log.d(TAG, "onResolveIntent saving restore " + currentIntent.getDataString());
 
                     app.saveInstance(currentIntent, current);
                 }
@@ -59,16 +58,16 @@ public class AppActivity extends SoupActivity {
 
                 if (state != null) {
 
-                    Log.d(TAG, "Restored state! " + getIntent().getDataString());
-                    Log.d(TAG, "State: " + state);
+                    Log.d(TAG, "onResolveIntent restoring " + uri);
 
-                    appView.clearView();
-
-                    appView.restoreState(state);
+                    restoreState(state, uri);
 
                     Log.d(TAG, "Url after new state: " + appView.getUrl());
 
-                    currentUri = uri;
+                    // Remember state intent and uri
+                    appViewUrl = currentUri = uri;
+                    currentIntent = getIntent();
+
                     clearHistory();
 
                     return;
@@ -82,7 +81,8 @@ public class AppActivity extends SoupActivity {
 
 			Log.d(TAG, "onResolveIntent loading " + uri);
 
-            currentUri = uri;
+            // Remember state intent and uri
+            appViewUrl = currentUri = uri;
             currentIntent = getIntent();
 
 			super.loadUrl(uri);
@@ -92,23 +92,58 @@ public class AppActivity extends SoupActivity {
 
 	}
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
+    private void saveState(Bundle state) {
 
-        if (currentIntent != getIntent()) {
-            return;
+        // appView.saveState(state);
+
+        String url = appView.getUrl();
+        if (TextUtils.isEmpty(url)) {
+            url = appViewUrl;
         }
 
-        // super.onSaveInstanceState(outState);
+        // appView.getUrl might be already null here
+        state.putString("appView.url", url);
+        state.putInt("appView.scroll_x", appView.getScrollX());
+        state.putInt("appView.scroll_y", appView.getScrollY());
 
-        appView.saveState(outState);
+        Log.d(TAG, "saveState: " + getIntent().getDataString() + " with " + url);
 
-        Log.d(TAG, "Saving state! " + getIntent().getDataString());
+        ((SoupApplication)getApplication()).saveInstance(currentIntent, state);
 
-        ((SoupApplication)getApplication()).saveInstance(getIntent(), outState);
     }
 
-	public void onDestroy() {
+    private void restoreState(Bundle state, String uri) {
+
+        appView.clearView();
+        
+        // appView.restoreState(state);
+
+        Log.d(TAG, "restoreState: " + uri + " vs " + state.getString("appView.url"));
+        
+        if (!TextUtils.isEmpty(state.getString("appView.url"))) {
+            uri = state.getString("appView.url");
+        }
+
+        super.loadUrl(uri);
+
+        appView.scrollTo(state.getInt("appView.scroll_x"), state.getInt("appView.scroll_y"));
+
+    }
+
+    // @Override
+    // public void onSaveInstanceState(Bundle state) {
+    //
+    // if (currentIntent != getIntent()) {
+    // return;
+    // }
+    //
+    // // super.onSaveInstanceState(state);
+    //
+    // saveState(state);
+    // }
+
+
+    public void onDestroy() {
 		super.onDestroy();
 
         // Toast.makeText(this, "App closed", Toast.LENGTH_SHORT).show();

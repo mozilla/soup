@@ -77,6 +77,8 @@ public abstract class SoupActivity extends DroidGap {
 
     public View customView;
 
+    public String appViewUrl;
+
     private class SoupChildViewClient extends WebViewClient {
 
         private boolean gotHidden = false;
@@ -262,6 +264,8 @@ public abstract class SoupActivity extends DroidGap {
             if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
                 // TODO: Only inject phonegap for trusted views
                 injectJavaScript(appView, true);
+
+                appViewUrl = url;
             }
 
             Uri uri = Uri.parse(url);
@@ -281,7 +285,7 @@ public abstract class SoupActivity extends DroidGap {
                         titlePop.showAtLocation(appView, Gravity.LEFT | Gravity.BOTTOM,
                                 (int)(5 * dm.density), (int)(5 * dm.density));
                     } catch (Exception e) {
-                        Log.w(TAG, "Could not show pop", e);
+                        Log.w(TAG, "Could not show pop");
                     }
                 }
             });
@@ -303,6 +307,8 @@ public abstract class SoupActivity extends DroidGap {
 
             if (!TextUtils.isEmpty(url) && !url.equals("about:blank")) {
                 injectJavaScript(appView, true);
+
+                appViewUrl = url;
             }
 
             titleView.setVisibility(View.GONE);
@@ -571,7 +577,7 @@ public abstract class SoupActivity extends DroidGap {
         try {
             titlePop.dismiss();
         } catch (Exception e) {
-            Log.w(TAG, "Could not hide pop", e);
+            Log.w(TAG, "Could not hide pop");
         }
 
     }
