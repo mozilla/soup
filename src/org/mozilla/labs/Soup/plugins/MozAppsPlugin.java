@@ -180,7 +180,7 @@ public class MozAppsPlugin extends Plugin {
                         values.put(Apps.NAME, name);
                         values.put(Apps.DESCRIPTION, description);
 
-                        final Bitmap bitmap = Apps.fetchIconByApp(origin, manifest);
+                        final Bitmap bitmap = Apps.fetchIconByApp(ctx, origin, manifest);
 
                         if (bitmap != null) {
                             values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));

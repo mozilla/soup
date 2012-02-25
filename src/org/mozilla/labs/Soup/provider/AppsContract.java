@@ -192,7 +192,7 @@ public final class AppsContract {
                 values.put(Apps.NAME, manifest.optString("name"));
                 values.put(Apps.DESCRIPTION, manifest.optString("description"));
 
-                bitmap = Apps.fetchIconByApp(origin, manifest);
+                bitmap = Apps.fetchIconByApp(ctx, origin, manifest);
 
                 if (bitmap != null) {
                     values.put(Apps.ICON, ImageFactory.bitmapToBytes(bitmap));
@@ -292,7 +292,7 @@ public final class AppsContract {
             return cur;
         }
 
-        public static Bitmap fetchIconByApp(String origin, JSONObject manifest) {
+        public static Bitmap fetchIconByApp(Context ctx, String origin, JSONObject manifest) {
 
             JSONObject icons = manifest.optJSONObject("icons");
 
@@ -319,7 +319,9 @@ public final class AppsContract {
 
             Log.d(TAG, "Fetching icon " + max + ": " + iconUrl);
 
-            return ImageFactory.getResizedImage(iconUrl, 96, 96);
+            int iconSize = (int)(48 * ctx.getResources().getDisplayMetrics().density);
+
+            return ImageFactory.getResizedImage(iconUrl, iconSize, iconSize);
         }
 
     }
