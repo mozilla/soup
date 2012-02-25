@@ -2,37 +2,31 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/global_store"
-        android:icon="@drawable/ic_menu_toggle"
-        android:title="Market"/>
-
-    <item
         android:id="@+id/global_launcher"
         android:icon="@drawable/ic_menu_toggle"
         android:title="Dashboard"/>
-
+    <item
+        android:id="@+id/global_store"
+        android:icon="@drawable/ic_menu_toggle"
+        android:title="Market"/>
     <item
         android:id="@+id/global_stop"
         android:icon="@drawable/ic_menu_stop"
         android:title="Stop"
         android:visible="false"/>
-
     <item
         android:id="@+id/global_refresh"
         android:icon="@drawable/ic_menu_refresh"
         android:title="Refresh"/>
-
     <item
         android:id="@+id/global_settings"
         android:icon="@android:drawable/ic_menu_preferences"
         android:title="Settings"/>
-
     <item
         android:id="@+id/global_login"
         android:icon="@drawable/ic_menu_login"
         android:title="Sign in"
         android:visible="false"/>
-
     <item
         android:id="@+id/global_logout"
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
