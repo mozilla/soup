@@ -839,8 +839,12 @@ public abstract class SoupActivity extends DroidGap {
                 return true;
             }
             case R.id.global_refresh: {
-                appView.stopLoading();
-                appView.reload();
+
+                if (appViewUrl != null) {
+                    // .reload didn't work great for phonegaps messaging channel
+                    appView.stopLoading();
+                    loadUrl(appViewUrl);
+                }
 
                 return true;
             }
