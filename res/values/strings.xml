@@ -26,7 +26,7 @@
         <item>file:///android_asset/www/store.html</item>
     </string-array>
 
-    <string name="store_default">https://apps-preview.mozilla.org</string>
+    <string name="store_default">file:///android_asset/www/store.html</string>
 
     <string-array name="identity_array">
         <item>dev.diresworb.org</item>
