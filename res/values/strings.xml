@@ -10,19 +10,13 @@
     <!-- Preferences -->
 
     <string-array name="store_array">
-        <item>apps-preview.mozilla.org</item>
-        <item>addons-dev.allizom.org</item>
-        <item>apps-preview-dev.allizom.org</item>
-        <item>apps-preview.allizom.org</item>
+        <item>marketplace-dev.allizom.org</item>
         <item>apps.mozillalabs.com</item>
         <item>apps-preview.json backup</item>
         <item>store.html</item>
     </string-array>
     <string-array name="store_values">
-        <item>https://apps-preview.mozilla.org</item>
-        <item>https://addons-dev.allizom.org</item>
-        <item>https://apps-preview-dev.allizom.org</item>
-        <item>https://apps-preview.allizom.org</item>
+        <item>https://marketplace-dev.allizom.org/en-US/search/</item>
         <item>https://apps.mozillalabs.com/appdir/</item>
         <item>https://apps.mozillalabs.com/appdir/?db=db/apps-preview.json</item>
         <item>file:///android_asset/www/store.html</item>
